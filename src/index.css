@@ -17,11 +17,16 @@
   box-sizing: border-box;
 }
 
+/* アプリ全体のフォント（index.html で Google Fonts を読み込み）。読み込み前・失敗時は OS 標準にフォールバック */
+:root {
+  --font-sans: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
 }
 
@@ -75,4 +80,9 @@ body {
 
 .react-flow__node.draggable.dragging {
   transition: none;
+}
+
+/* フォーム要素はブラウザ既定のフォントになるため、アプリのフォントを継承させる */
+button, input, textarea, select {
+  font-family: inherit;
 }
