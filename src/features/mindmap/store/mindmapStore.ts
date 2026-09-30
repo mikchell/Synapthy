@@ -79,6 +79,8 @@ interface MindmapStore {
   addImageNode: (path: string, width: number, height: number, position: { x: number; y: number }) => void
   insertNodeBetween: (sourceId: string, targetId: string, edgeId: string, sourceHandle: string, targetHandle: string) => void
   tidyLayout: () => void
+  reparentDroppedNode: (nodeId: string) => void
+  autoTidyLogicTree: () => void
   tidySelectedLayout: () => void
   toggleLayout: () => void
   updateNodeLabel: (id: string, label: string) => void
@@ -131,6 +133,13 @@ const generateId = () => `node-${Date.now()}-${nodeIdCounter++}`
 const generateSheetId = () => crypto.randomUUID()
 
 const COLORS: NodeColor[] = ['purple', 'blue', 'cyan', 'green', 'pink', 'orange']
+
+// ロジックツリーのノードサイズ（小・中・大）。data.sizeScale に倍率として保存する
+export const NODE_SIZE_STEPS = [
+  { label: '小', scale: 0.8 },
+  { label: '中', scale: 1 },
+  { label: '大', scale: 1.3 },
+] as const
 
 const NODE_W = 240
 const NODE_H = 80
@@ -264,6 +273,19 @@ export const useMindmapStore = create<MindmapStore>()(
           return
         }
         set({ nodes: applyNodeChanges(changes, currentNodes) as Node<MindmapNodeData>[] })
+
+        // ロジックツリー：文字の確定やサイズ段階の変更でノードの実際の大きさが変わったら整列し直す
+        // （初回の計測＝シートを開いた直後は、既存の配置を勝手に動かさないよう対象外）
+        const sizeChanged = changes.some((c) => {
+          if (c.type !== 'dimensions' || !c.dimensions) return false
+          const prev = currentNodes.find((n) => n.id === c.id)
+          if (prev?.type !== 'mindmapNode' || !prev.measured?.width || !prev.measured?.height) return false
+          return (
+            Math.abs(prev.measured.width - c.dimensions.width) > 0.5 ||
+            Math.abs(prev.measured.height - c.dimensions.height) > 0.5
+          )
+        })
+        if (sizeChanged) get().autoTidyLogicTree()
       },
 
       onEdgesChange: (changes) => {
@@ -310,7 +332,7 @@ export const useMindmapStore = create<MindmapStore>()(
           id: newId,
           type: 'mindmapNode',
           position,
-          data: { label: 'アイデア', color: nodeColor, depth: parentDepth + 1 },
+          data: { label: '', color: nodeColor, depth: parentDepth + 1 },
         }
 
         const newEdge: Edge = {
@@ -329,6 +351,7 @@ export const useMindmapStore = create<MindmapStore>()(
           selectedNodeId: newId,
           editingNodeId: newId,
         })
+        get().autoTidyLogicTree()
       },
 
       addChildNodeInDirection: (parentId, direction) => {
@@ -374,7 +397,7 @@ export const useMindmapStore = create<MindmapStore>()(
           id: newId,
           type: 'mindmapNode',
           position,
-          data: { label: 'アイデア', color: nodeColor, depth: (parent.data.depth ?? 0) + 1 },
+          data: { label: '', color: nodeColor, depth: (parent.data.depth ?? 0) + 1 },
         }
 
         const newEdge: Edge = {
@@ -420,7 +443,7 @@ export const useMindmapStore = create<MindmapStore>()(
           id: newId,
           type: 'mindmapNode',
           position,
-          data: { label: 'アイデア', color: nodeColor, depth: parentDepth + 1 },
+          data: { label: '', color: nodeColor, depth: parentDepth + 1 },
         }
 
         const newEdge: Edge = {
@@ -433,11 +456,14 @@ export const useMindmapStore = create<MindmapStore>()(
           style: { stroke: '#7c3aed', strokeWidth: 2, opacity: 0.7 },
         }
 
+        // 整列時に現在ノードのすぐ下へ並ぶよう、現在ノードへのエッジの直後に挿入する
+        const insertAt = edges.indexOf(parentEdge) + 1
         set({
           nodes: [...applyShifted(nodes, shifted), newNode],
-          edges: [...edges, newEdge],
+          edges: [...edges.slice(0, insertAt), newEdge, ...edges.slice(insertAt)],
           selectedNodeId: newId,
         })
+        get().autoTidyLogicTree()
       },
 
       // クリップボードから貼り付けた画像を、マインドマップのツリーとは無関係な自由配置ノードとして追加
@@ -452,7 +478,7 @@ export const useMindmapStore = create<MindmapStore>()(
         set({ nodes: [...get().nodes, newNode], selectedNodeId: newNode.id })
       },
 
-      insertNodeBetween: (sourceId, targetId, edgeId, sourceHandle, targetHandle) => {
+      insertNodeBetween: (sourceId, targetId, edgeId, _sourceHandle, _targetHandle) => {
         const { nodes, edges } = get()
         const source = nodes.find((n) => n.id === sourceId) as Node<MindmapNodeData> | undefined
         const target = nodes.find((n) => n.id === targetId)
@@ -477,7 +503,7 @@ export const useMindmapStore = create<MindmapStore>()(
             y: target.position.y,
           },
           data: {
-            label: 'アイデア',
+            label: '',
             color: nodeColor,
             depth: (source.data.depth ?? 0) + 1,
           },
@@ -491,12 +517,12 @@ export const useMindmapStore = create<MindmapStore>()(
 
         const isFree = get().sheets.find((s) => s.id === get().currentSheetId)?.mapType === 'free'
         const edgeStyle = { stroke: '#7c3aed', strokeWidth: 2, opacity: 0.7 }
-        const newEdges: Edge[] = [
+        const [edgeToNew, edgeToTarget]: Edge[] = [
           {
             id: `edge-${sourceId}-${newId}`,
             source: sourceId,
             target: newId,
-            sourceHandle: isFree ? 'free-src' : sourceHandle,
+            sourceHandle: isFree ? 'free-src' : 'right',
             targetHandle: isFree ? 'free-tgt' : 'left',
             type: 'interactive',
             style: edgeStyle,
@@ -506,18 +532,82 @@ export const useMindmapStore = create<MindmapStore>()(
             source: newId,
             target: targetId,
             sourceHandle: isFree ? 'free-src' : 'right',
-            targetHandle: isFree ? 'free-tgt' : targetHandle,
+            targetHandle: isFree ? 'free-tgt' : 'left',
             type: 'interactive',
             style: edgeStyle,
           },
         ]
 
+        // 元のエッジの位置に置き換えて、整列時の兄弟の並び順を保つ
         set({
           nodes: [...shiftedNodes, newNode],
-          edges: [...edges.filter((e) => e.id !== edgeId), ...newEdges],
+          edges: [...edges.map((e) => (e.id === edgeId ? edgeToNew : e)), edgeToTarget],
           selectedNodeId: newId,
           editingNodeId: newId,
         })
+        get().autoTidyLogicTree()
+      },
+
+      // ロジックツリー：ドラッグして離したノードが別のノードに重なっていればその子に付け替え、
+      // どちらの場合もツリー全体を自動整列する（＝ノードを自由な位置には置けない）
+      reparentDroppedNode: (nodeId) => {
+        const { nodes, edges, sheets, currentSheetId } = get()
+        if (sheets.find((s) => s.id === currentSheetId)?.mapType === 'free') return
+
+        const dragged = nodes.find((n) => n.id === nodeId)
+        if (!dragged || dragged.type !== 'mindmapNode') return
+
+        const descendantsOf = (id: string): string[] =>
+          edges.filter((e) => e.source === id).flatMap((e) => [e.target, ...descendantsOf(e.target)])
+        const excluded = new Set([nodeId, ...descendantsOf(nodeId)])
+        const oldParentId = edges.find((e) => e.target === nodeId)?.source
+
+        // ドラッグしたノードの中心が重なっているノードを新しい親にする（自分と子孫は除く）
+        const size = (n: Node<AnyNodeData>) => ({
+          w: n.measured?.width ?? NODE_W,
+          h: n.measured?.height ?? NODE_H,
+        })
+        const cx = dragged.position.x + size(dragged).w / 2
+        const cy = dragged.position.y + size(dragged).h / 2
+        const newParent = nodeId === 'root' ? undefined : nodes.find((n) => {
+          if (n.type !== 'mindmapNode' || excluded.has(n.id)) return false
+          const { w, h } = size(n)
+          return cx >= n.position.x && cx <= n.position.x + w && cy >= n.position.y && cy <= n.position.y + h
+        })
+
+        if (newParent && newParent.id !== oldParentId) {
+          const newEdge: Edge = {
+            id: `edge-${newParent.id}-${nodeId}`,
+            source: newParent.id,
+            target: nodeId,
+            sourceHandle: 'right',
+            targetHandle: 'left',
+            type: 'interactive',
+            style: { stroke: '#7c3aed', strokeWidth: 2, opacity: 0.7 },
+          }
+          // 付け替えたノードとその子孫の depth を新しい親に合わせる
+          const depthDelta =
+            ((newParent.data as MindmapNodeData).depth ?? 0) + 1 - ((dragged.data as MindmapNodeData).depth ?? 0)
+          set({
+            edges: [...edges.filter((e) => e.target !== nodeId), newEdge],
+            nodes: nodes.map((n) => {
+              if (!excluded.has(n.id)) return n
+              const data = n.data as MindmapNodeData
+              return { ...n, data: { ...data, depth: (data.depth ?? 0) + depthDelta } }
+            }),
+          })
+        }
+
+        get().autoTidyLogicTree()
+      },
+
+      // ロジックツリーのときだけ自動整列する（ノードの追加・削除・付け替えの後に呼ぶ）
+      // 自動整列では「整列前に戻す」用のスナップショットを上書きしない
+      autoTidyLogicTree: () => {
+        const { sheets, currentSheetId, layoutSnapshot } = get()
+        if (sheets.find((s) => s.id === currentSheetId)?.mapType === 'free') return
+        get().tidyLayout()
+        set({ layoutSnapshot })
       },
 
       tidyLayout: () => {
@@ -527,7 +617,7 @@ export const useMindmapStore = create<MindmapStore>()(
         const DEFAULT_W = isMobile ? 130 : 180
         const DEFAULT_H = isMobile ? 44 : 60
         const V_GAP = isMobile ? 20 : 30   // ノード間の縦の隙間
-        const H_GAP = isMobile ? 24 : 48   // 親右端〜子左端の横の隙間
+        const H_GAP = isMobile ? 40 : 80   // 親右端〜子左端の横の隙間
 
         // 実際のサイズを取得（リサイズ済みならそのサイズ、未設定はデフォルト）
         const nodeSize = (id: string) => {
@@ -612,7 +702,7 @@ export const useMindmapStore = create<MindmapStore>()(
         const DEFAULT_W_S = isMobile ? 130 : 180
         const DEFAULT_H_S = isMobile ? 44 : 60
         const V_GAP_S = isMobile ? 20 : 30
-        const H_GAP_S = isMobile ? 24 : 48
+        const H_GAP_S = isMobile ? 40 : 80
 
         const nodeSize = (id: string) => {
           const n = nodes.find((nd) => nd.id === id)
@@ -739,11 +829,17 @@ export const useMindmapStore = create<MindmapStore>()(
         })
       },
 
+      // ロジックツリーのサイズ段階（小・中・大）を変更する
+      // 以前に四隅のリサイズで設定された固定サイズが残っていると段階が効かないので消す
       updateNodeSizeScale: (id, sizeScale) => {
         set({
-          nodes: get().nodes.map((n) =>
-            n.id === id ? { ...n, data: { ...n.data, sizeScale } } : n
-          ),
+          nodes: get().nodes.map((n) => {
+            if (n.id !== id) return n
+            const rest = { ...n.style }
+            delete rest.width
+            delete rest.height
+            return { ...n, width: undefined, height: undefined, style: rest, data: { ...n.data, sizeScale } }
+          }),
         })
       },
 
@@ -781,12 +877,14 @@ export const useMindmapStore = create<MindmapStore>()(
                   ? { ...n, position: { ...n.position, x: n.position.x - (NODE_W + PADDING) } }
                   : n
               ),
-            edges: [
-              ...edges.filter((e) => e.source !== id && e.target !== id),
-              ...reconnected,
-            ],
+            // 削除したノードへのエッジの位置に差し込み、整列時の兄弟の並び順を保つ
+            edges: edges.flatMap((e) => {
+              if (e.id === parentEdge.id) return reconnected
+              return e.source === id || e.target === id ? [] : [e]
+            }),
             selectedNodeId: null,
           })
+          get().autoTidyLogicTree()
           return
         }
 
@@ -795,6 +893,7 @@ export const useMindmapStore = create<MindmapStore>()(
           edges: edges.filter((e) => e.source !== id && e.target !== id),
           selectedNodeId: null,
         })
+        get().autoTidyLogicTree()
       },
 
       setSelectedNodeId: (id) => set({ selectedNodeId: id }),

@@ -36,7 +36,7 @@ const getMinimapNodeColor = (node: { data: unknown }) =>
   MINIMAP_COLOR_MAP[(node.data as { color: string }).color] ?? '#7c3aed'
 
 function MindmapFlow() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setSelectedNodeId, editingNodeId, addImageNode } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setSelectedNodeId, editingNodeId, addImageNode, reparentDroppedNode } =
     useMindmapStore(
       useShallow((s) => ({
         nodes: s.nodes,
@@ -47,6 +47,7 @@ function MindmapFlow() {
         setSelectedNodeId: s.setSelectedNodeId,
         editingNodeId: s.editingNodeId,
         addImageNode: s.addImageNode,
+        reparentDroppedNode: s.reparentDroppedNode,
       }))
     )
   const { setCenter, getZoom, setViewport, getViewport, screenToFlowPosition } = useReactFlow()
@@ -75,6 +76,12 @@ function MindmapFlow() {
   }, [addImageNode, screenToFlowPosition])
 
   const handlePaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId])
+
+  // ロジックツリー：別のノードに重ねて離したらその子に付け替え、それ以外は元の位置に戻す
+  const handleNodeDragStop = useCallback(
+    (_event: unknown, node: { id: string }) => reparentDroppedNode(node.id),
+    [reparentDroppedNode]
+  )
 
   useEffect(() => {
     if (!editingNodeId) return
@@ -136,6 +143,7 @@ function MindmapFlow() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onPaneClick={handlePaneClick}
+        onNodeDragStop={handleNodeDragStop}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         minZoom={0.2}

@@ -1,7 +1,7 @@
 import { Handle, Position, type Node, type NodeProps, NodeResizeControl } from '@xyflow/react'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import { Plus, Trash2, StickyNote } from 'lucide-react'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
@@ -16,6 +16,9 @@ export const COLOR_MAP: Record<NodeColor, { bg: string; border: string; glow: st
 }
 
 // depth 0 = root（最大）、depth が深くなるほど小さく
+// 新規ノード（ラベル未入力）に薄く表示する仮の文字
+const PLACEHOLDER_LABEL = 'アイデア'
+
 const SIZE_MAP = [
   { minWidth: 200, maxWidth: 280, fontSize: 18, fontWeight: 700, paddingV: 20, paddingH: 28, borderRadius: 24, borderWidth: 2 },
   { minWidth: 150, maxWidth: 210, fontSize: 15, fontWeight: 600, paddingV: 14, paddingH: 20, borderRadius: 18, borderWidth: 1.5 },
@@ -97,15 +100,26 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   const inputRef = useRef<HTMLInputElement>(null)
   const colors = COLOR_MAP[data.color]
   const showActions = (selected || hovered) && !editing
-  const sz = SIZE_MAP[data.isRoot ? 0 : 1]
+  const baseSz = SIZE_MAP[data.isRoot ? 0 : 1]
+  // ロジックツリーはサイズ段階（小・中・大 = data.sizeScale）で文字・余白ごと拡大縮小する
+  const stepScale = isFree ? 1 : (data.sizeScale ?? 1)
+  const sz = useMemo(() => stepScale === 1 ? baseSz : {
+    ...baseSz,
+    minWidth: Math.round(baseSz.minWidth * stepScale),
+    fontSize: Math.round(baseSz.fontSize * stepScale),
+    paddingV: Math.round(baseSz.paddingV * stepScale),
+    paddingH: Math.round(baseSz.paddingH * stepScale),
+    borderRadius: Math.round(baseSz.borderRadius * stepScale),
+  }, [baseSz, stepScale])
   // フリーモードは縦パディングを2.5倍にしてアスペクト比を約1.1:1に（楕円が丸く見える）
   const paddingV = isFree ? Math.round(sz.paddingH * 2.5) : sz.paddingV
   const defaultRadius = isFree ? '50%' : sz.borderRadius
   const nodeBorderRadius = data.isCircle ? 9999 : (data.borderRadius !== undefined ? data.borderRadius : defaultRadius)
   // width・height両方使って面積ベースでスケール（より追従感が出る）
   const defaultH = paddingV * 2 + sz.fontSize * 2.2
-  const scaleW = width ? width / sz.minWidth : 1
-  const scaleH = height ? height / defaultH : 1
+  // 自由リサイズに合わせた文字の拡大はフリー展開のみ（ロジックツリーはサイズ段階で決まる）
+  const scaleW = isFree && width ? width / sz.minWidth : 1
+  const scaleH = isFree && height ? height / defaultH : 1
   const fontSize = Math.round(sz.fontSize * Math.sqrt(scaleW * scaleH))
 
   useEffect(() => { setDraft(data.label) }, [data.label])
@@ -114,18 +128,29 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     if (editingNodeId === id) {
       setEditing(true)
       setEditingNodeId(null)
-      requestAnimationFrame(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      })
     }
   }, [editingNodeId, id, setEditingNodeId])
 
+  // 編集開始時に入力欄へフォーカスする
+  // 追加直後のノードは React Flow がサイズ計測まで visibility:hidden にしており、その間の focus() は無視される。
+  // フォーカスが入らないと onBlur（確定）が起きず編集中のまま固まり、+ボタンも出なくなるため、
+  // 実際にフォーカスが入るまで毎フレーム再試行する
   useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+    if (!editing) return
+    let frame = 0
+    let tries = 0
+    const tryFocus = () => {
+      const input = inputRef.current
+      if (!input) return
+      input.focus()
+      if (document.activeElement === input) {
+        input.select()
+        return
+      }
+      if (++tries < 30) frame = requestAnimationFrame(tryFocus)
     }
+    tryFocus()
+    return () => cancelAnimationFrame(frame)
   }, [editing])
 
   const commitEdit = useCallback(() => {
@@ -252,9 +277,10 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       onMouseEnter={() => { cancelIndicatorHide(); setHovered(true) }}
       onMouseLeave={scheduleIndicatorHide}
       onMouseMove={handleMouseMove}
-      onTouchStart={isMobile && selected ? handlePinchStart : undefined}
-      onTouchMove={isMobile && selected ? handlePinchMove : undefined}
-      onTouchEnd={isMobile && selected ? handlePinchEnd : undefined}
+      // ピンチでの自由リサイズはフリー展開のみ（ロジックツリーはサイズ段階で変更する）
+      onTouchStart={isFree && isMobile && selected ? handlePinchStart : undefined}
+      onTouchMove={isFree && isMobile && selected ? handlePinchMove : undefined}
+      onTouchEnd={isFree && isMobile && selected ? handlePinchEnd : undefined}
     >
       {/* マウント時のみ：ネットワーク拡散リング */}
       <motion.div
@@ -268,7 +294,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
           pointerEvents: 'none',
         }}
       />
-      {selected && (['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map((pos) => (
+      {/* 四隅の自由リサイズはフリー展開のみ */}
+      {isFree && selected && (['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map((pos) => (
         <NodeResizeControl
           key={pos}
           position={pos}
@@ -295,23 +322,52 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       <Handle id="free-tgt" type="target" position={Position.Top} style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', opacity: 0, pointerEvents: 'none' }} />
 
       {editing ? (
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commitEdit}
-          onKeyDown={handleKeyDown}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: colors.text,
-            fontSize,
-            fontWeight: sz.fontWeight,
-            width: '100%',
-            textAlign: 'center',
-          }}
-        />
+        // 入力欄の幅を入力中の文字に合わせる（input 既定の幅でノードが広がり、確定時と大きさが変わるのを防ぐ）
+        // 見えないspanで文字幅を測り、同じグリッドセルに input を重ねる
+        <span style={{ display: 'inline-grid', maxWidth: '100%' }}>
+          <span
+            aria-hidden
+            style={{
+              gridArea: '1 / 1',
+              // 未入力のときだけ薄い「アイデア」を仮表示し、入力があれば幅合わせ専用として隠す
+              visibility: draft ? 'hidden' : 'visible',
+              color: colors.text,
+              opacity: 0.35,
+              pointerEvents: 'none',
+              whiteSpace: 'pre',
+              fontSize,
+              fontWeight: sz.fontWeight,
+              lineHeight: 1.4,
+            }}
+          >
+            {draft || PLACEHOLDER_LABEL}
+          </span>
+          <input
+            ref={inputRef}
+            // size=1 で input 自身の既定幅（約20文字分）をなくし、幅は上の span に任せる
+            size={1}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={handleKeyDown}
+            style={{
+              gridArea: '1 / 1',
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              padding: 0,
+              margin: 0,
+              font: 'inherit',
+              color: colors.text,
+              fontSize,
+              fontWeight: sz.fontWeight,
+              lineHeight: 1.4,
+              width: '100%',
+              minWidth: 0,
+              textAlign: 'center',
+            }}
+          />
+        </span>
       ) : (
         <p
           style={{
@@ -322,9 +378,10 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             textAlign: 'center',
             wordBreak: 'break-word',
             lineHeight: 1.4,
+            opacity: data.label ? 1 : 0.35,
           }}
         >
-          {data.label}
+          {data.label || PLACEHOLDER_LABEL}
         </p>
       )}
 

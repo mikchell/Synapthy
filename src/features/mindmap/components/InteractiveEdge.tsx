@@ -1,4 +1,4 @@
-import { EdgeLabelRenderer, type EdgeProps, getBezierPath, getStraightPath, useInternalNode } from '@xyflow/react'
+import { EdgeLabelRenderer, Position, type EdgeProps, getBezierPath, getStraightPath, useInternalNode } from '@xyflow/react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { memo, useRef, useState } from 'react'
@@ -24,8 +24,6 @@ function InteractiveEdgeComponent({
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
   sourceHandleId,
   targetHandleId,
   style,
@@ -65,9 +63,23 @@ function InteractiveEdgeComponent({
     tx = tgtPt.x; ty = tgtPt.y
   }
 
+  // ロジックツリー：エッジに保存されたハンドルIDには関係なく、
+  // 常に「親の右側の中央 → 子の左側の中央」で接続する
+  // ※ ハンドル位置（handleBounds）はノードの出現アニメーション（scale 0→1）中に測られて
+  //   中央に潰れた値のまま残ることがあるため使わず、ノードの位置とサイズから直接計算する
+  if (!isFree && sourceNode && targetNode) {
+    sx = sourceNode.internals.positionAbsolute.x + (sourceNode.measured?.width ?? 200)
+    sy = sourceNode.internals.positionAbsolute.y + (sourceNode.measured?.height ?? 60) / 2
+    tx = targetNode.internals.positionAbsolute.x
+    ty = targetNode.internals.positionAbsolute.y + (targetNode.measured?.height ?? 60) / 2
+  }
+
   const [edgePath, labelX, labelY] = isFree
     ? getStraightPath({ sourceX: sx, sourceY: sy, targetX: tx, targetY: ty })
-    : getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
+    : getBezierPath({
+        sourceX: sx, sourceY: sy, sourcePosition: Position.Right,
+        targetX: tx, targetY: ty, targetPosition: Position.Left,
+      })
 
   const { opacity: styleOpacity, ...restStyle } = (style ?? {}) as React.CSSProperties
 

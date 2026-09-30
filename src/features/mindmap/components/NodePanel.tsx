@@ -2,7 +2,7 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { AlignJustify, GripVertical, Pin, PinOff } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
-import { type MindmapNodeData, type NodeColor, useMindmapStore } from '../store/mindmapStore'
+import { type MindmapNodeData, type NodeColor, NODE_SIZE_STEPS, useMindmapStore } from '../store/mindmapStore'
 
 const COLORS: { key: NodeColor; label: string; hex: string; border: string }[] = [
   { key: 'purple', label: 'パープル', hex: '#f3e8ff', border: 'rgba(139,92,246,0.5)' },
@@ -27,6 +27,9 @@ export function NodePanel() {
   const updateNodeColor = useMindmapStore((s) => s.updateNodeColor)
   const updateNodeMemo = useMindmapStore((s) => s.updateNodeMemo)
   const updateNodeBorderWidth = useMindmapStore((s) => s.updateNodeBorderWidth)
+  const updateNodeSizeScale = useMindmapStore((s) => s.updateNodeSizeScale)
+  const selectedNodeSizeScale = selectedNode?.data.sizeScale ?? 1
+  const isFree = useMindmapStore((s) => s.sheets.find((sh) => sh.id === s.currentSheetId)?.mapType === 'free')
   const defaultNodeColor = useMindmapStore((s) => s.defaultNodeColor)
   const setDefaultNodeColor = useMindmapStore((s) => s.setDefaultNodeColor)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -150,6 +153,37 @@ export function NodePanel() {
                     />
                   ))}
                 </div>
+
+                {/* サイズ（ロジックツリーのみ：小・中・大の段階で切り替え） */}
+                {!isFree && (
+                  <div style={{ marginTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 14 }}>
+                    <p style={{ color: '#94a3b8', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0' }}>
+                      サイズ
+                    </p>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {NODE_SIZE_STEPS.map(({ label, scale }) => {
+                        const active = selectedNodeSizeScale === scale
+                        return (
+                          <button
+                            key={label}
+                            onClick={() => selectedNodeId && updateNodeSizeScale(selectedNodeId, scale)}
+                            style={{
+                              flex: 1, height: 28, borderRadius: 8,
+                              background: active ? 'rgba(124,58,237,0.12)' : 'rgba(0,0,0,0.04)',
+                              border: active ? '1.5px solid rgba(124,58,237,0.5)' : '1.5px solid transparent',
+                              color: active ? '#7c3aed' : '#64748b',
+                              fontSize: 12, fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* 枠線の太さ */}
                 <div style={{ marginTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 14 }}>
