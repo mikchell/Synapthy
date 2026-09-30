@@ -218,6 +218,33 @@ const DIRECTION_CONFIG: Record<FreeDirection, {
   'top-left':     { dx: -1, dy: -1, shift: 'y', shiftSign: -1 },
 }
 
+// フリー展開：ノード同士の最小のすき間
+const FREE_GAP = 28
+// フリー展開の新規ノードのおおよその大きさ（描画前でまだ計測できないため。楕円のノードは縦にも大きい）
+const FREE_NEW_NODE_SIZE = { w: 170, h: 140 }
+
+// ノードの実際の大きさ（計測前は種類ごとのおおよその値）
+function freeNodeSize(n: Node<AnyNodeData>) {
+  const isRoot = n.type === 'mindmapNode' && (n.data as MindmapNodeData).isRoot
+  return {
+    w: n.measured?.width ?? n.width ?? (isRoot ? 220 : FREE_NEW_NODE_SIZE.w),
+    h: n.measured?.height ?? n.height ?? (isRoot ? 180 : FREE_NEW_NODE_SIZE.h),
+  }
+}
+
+// 中心 (cx, cy)・大きさ size のノードが、既存のどれかのノードとすき間込みで重なるか
+function overlapsAnyNode(cx: number, cy: number, size: { w: number; h: number }, nodes: Node<AnyNodeData>[]) {
+  return nodes.some((n) => {
+    const s = freeNodeSize(n)
+    const ncx = n.position.x + s.w / 2
+    const ncy = n.position.y + s.h / 2
+    return (
+      Math.abs(cx - ncx) < (size.w + s.w) / 2 + FREE_GAP &&
+      Math.abs(cy - ncy) < (size.h + s.h) / 2 + FREE_GAP
+    )
+  })
+}
+
 
 const initialSheet: Sheet = {
   id: crypto.randomUUID(),
@@ -367,28 +394,44 @@ export const useMindmapStore = create<MindmapStore>()(
           .map((e) => nodes.find((n) => n.id === e.target))
           .filter((n): n is Node<MindmapNodeData> => !!n)
 
-        let basePos: { x: number; y: number }
-        if (shift === 'y') {
-          const sorted = siblings.sort((a, b) => a.position.y - b.position.y)
-          let baseY: number
-          if (sorted.length === 0) {
-            baseY = parent.position.y + dy * (NODE_H + PADDING)
-          } else if (shiftSign < 0) {
-            baseY = sorted[0].position.y - (NODE_H + PADDING)
-          } else {
-            baseY = sorted[sorted.length - 1].position.y + (NODE_H + PADDING)
-          }
-          basePos = { x: parent.position.x + dx * (NODE_W + PADDING), y: baseY }
+        // 実際のノードの大きさを使って配置する（固定値だと縦に大きい楕円ノードが上下で重なる）
+        const newSize = FREE_NEW_NODE_SIZE
+        const center = (n: Node<AnyNodeData>) => {
+          const sz = freeNodeSize(n)
+          return { x: n.position.x + sz.w / 2, y: n.position.y + sz.h / 2, ...sz }
+        }
+        const p = center(parent)
+
+        let cx: number
+        let cy: number
+        if (siblings.length === 0) {
+          // 最初の子：親の縁から、すき間をあけて指定方向に置く
+          cx = p.x + dx * (p.w / 2 + FREE_GAP * 2 + newSize.w / 2)
+          cy = p.y + dy * (p.h / 2 + FREE_GAP * 2 + newSize.h / 2)
         } else {
-          const sorted = siblings.sort((a, b) => a.position.x - b.position.x)
-          const baseX = sorted.length === 0
-            ? parent.position.x + dx * (NODE_W + PADDING)
-            : sorted[sorted.length - 1].position.x + (NODE_W + PADDING)
-          basePos = { x: baseX, y: parent.position.y + dy * (NODE_H + PADDING) }
+          // 2つ目以降：同じ方向の兄弟の列の端に並べる
+          const key = shift
+          const edgeSibling = siblings.reduce((acc, n) =>
+            shiftSign * (center(n)[key] - center(acc)[key]) > 0 ? n : acc
+          )
+          const e = center(edgeSibling)
+          if (shift === 'y') {
+            cx = e.x
+            cy = e.y + shiftSign * (e.h / 2 + FREE_GAP + newSize.h / 2)
+          } else {
+            cx = e.x + shiftSign * (e.w / 2 + FREE_GAP + newSize.w / 2)
+            cy = e.y
+          }
         }
 
-        const position = basePos
-        const shifted = resolveCollisions(position, nodes, edges, shift, shiftSign)
+        // それでも既存のノードと重なるなら、空いている位置が見つかるまで兄弟を並べる向きにずらす
+        const step = (shift === 'y' ? newSize.h : newSize.w) + FREE_GAP
+        for (let i = 0; i < 60 && overlapsAnyNode(cx, cy, newSize, nodes); i++) {
+          if (shift === 'y') cy += shiftSign * step / 4
+          else cx += shiftSign * step / 4
+        }
+
+        const position = { x: cx - newSize.w / 2, y: cy - newSize.h / 2 }
         const colorIndex = nodes.length % COLORS.length
         const nodeColor = get().defaultNodeColor ?? COLORS[colorIndex]
         const newId = generateId()
@@ -412,7 +455,7 @@ export const useMindmapStore = create<MindmapStore>()(
         }
 
         set({
-          nodes: [...applyShifted(nodes, shifted), newNode],
+          nodes: [...nodes, newNode],
           edges: [...edges, newEdge],
           selectedNodeId: newId,
           editingNodeId: newId,

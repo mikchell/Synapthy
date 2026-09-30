@@ -1,5 +1,5 @@
 import { Handle, Position, type Node, type NodeProps, NodeResizeControl } from '@xyflow/react'
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { Plus, Trash2, StickyNote } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
@@ -92,11 +92,10 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // モバイル：2本指ピンチでノードリサイズ
   const pinchRef = useRef<{ dist: number; w: number; h: number } | null>(null)
-  // カーソル追従：useMotionValue + useSpring でリレンダリングなしにスムーズ追従
+  // +ボタンの位置（useMotionValue でリレンダリングなしに更新）
+  // ばねで追従させると、方向が変わるたびにボタンが滑るように移動して「逃げる」ので、決まった位置にすぐ置く
   const rawX = useMotionValue(0)
   const rawY = useMotionValue(0)
-  const springX = useSpring(rawX, { stiffness: 500, damping: 38, restDelta: 0.3 })
-  const springY = useSpring(rawY, { stiffness: 500, damping: 38, restDelta: 0.3 })
   const inputRef = useRef<HTMLInputElement>(null)
   const colors = COLOR_MAP[data.color]
   const showActions = (selected || hovered) && !editing
@@ -197,32 +196,44 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     if (e.touches.length < 2) pinchRef.current = null
   }, [])
 
-  // フリーモード：カーソル方向を8方向にスナップしてインジケーター位置を更新
-  // ボタンは固定スナップ位置に置く（カーソル完全追従だとボタンが逃げるため）
+  // フリーモード：カーソル方向を8方向にスナップして + ボタンの位置を更新
+  // ボタンは方向ごとの固定位置に置く（カーソル完全追従だとボタンが逃げるため）
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!isFree || editing) return
+    // 画面上の大きさ（ズーム倍率がかかった値）はカーソル位置の判定にだけ使う
     const rect = e.currentTarget.getBoundingClientRect()
-    const w = rect.width
-    const h = rect.height
-    const cx = e.clientX - rect.left - w / 2
-    const cy = e.clientY - rect.top - h / 2
-    const angle = Math.atan2(cy, cx)
+    // 楕円の縦横比を正規化してから角度を出す（横長の楕円でも8方向が均等になる）
+    const nx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)
+    const ny = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)
+    // ボタンへ向かってカーソルを動かす途中で方向が変わり、ボタンが逃げていかないよう、
+    // 方向を変えるのはカーソルがノードの中心寄りにあるときだけ（縁の近くでは今の方向を保つ）
+    if (indicatorDir && Math.hypot(nx, ny) > 0.55) {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = null
+      }
+      return
+    }
+    const angle = Math.atan2(ny, nx)
     const deg = ((angle * 180 / Math.PI) + 360) % 360
     const dir = angleToDirection(deg)
     // 固定スナップ角度でボタン位置を計算（カーソル方向ではなく方向名の中心角）
     const snappedRad = DIRECTION_ANGLE[dir] * Math.PI / 180
-    const rx = w / 2
-    const ry = h / 2
-    const OUTSIDE = 32
-    rawX.set(rx + (rx + OUTSIDE) * Math.cos(snappedRad) - 11)
-    rawY.set(ry + (ry + OUTSIDE) * Math.sin(snappedRad) - 11)
+    // ボタンはノードの内側の座標で配置し、ズームはノードごと掛かるので、ノード本来の大きさを使う
+    // （画面上の大きさを使うとズーム倍率が二重に掛かり、ズームするほどボタンが遠くへ飛んでいく）
+    const rx = e.currentTarget.offsetWidth / 2
+    const ry = e.currentTarget.offsetHeight / 2
+    // ボタンはノードの縁（楕円の輪郭）の上に置く。カーソルがノードの内側にいるまま届くので、
+    // 縁の近くでは方向を変えない上の処理と合わせて、ボタンへ向かう途中で動かない
+    rawX.set(rx + rx * Math.cos(snappedRad) - 11)
+    rawY.set(ry + ry * Math.sin(snappedRad) - 11)
     setIndicatorDir(dir)
     if (!showIndicator) setShowIndicator(true)
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current)
       hideTimerRef.current = null
     }
-  }, [isFree, editing, rawX, rawY, showIndicator])
+  }, [isFree, editing, rawX, rawY, showIndicator, indicatorDir])
 
   const scheduleIndicatorHide = useCallback(() => {
     setHovered(false)
@@ -498,7 +509,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         )}
       </AnimatePresence>
 
-      {/* フリー展開モード：カーソル追従インジケーター（useSpringでスムーズ追従） */}
+      {/* フリー展開モード：カーソルの方向に合わせてノードの縁に出す + ボタン */}
       <AnimatePresence>
         {isFree && !editing && showIndicator && (
           <motion.button
@@ -516,8 +527,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               position: 'absolute',
               left: 0,
               top: 0,
-              x: springX,
-              y: springY,
+              x: rawX,
+              y: rawY,
               width: 22,
               height: 22,
               borderRadius: '50%',
