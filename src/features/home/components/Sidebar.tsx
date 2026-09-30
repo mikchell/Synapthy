@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
+import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
 
 export type HomeSection = 'recent' | 'all' | 'starred' | 'templates' | 'trash' | 'folder'
 
@@ -12,33 +13,6 @@ interface Props {
   onSectionChange: (section: HomeSection) => void
   selectedFolderId: string | null
   onSelectFolder: (id: string) => void
-}
-
-function SynaptiqueIcon() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sidebarSynapseGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#7c3aed" />
-          <stop offset="100%" stopColor="#2563eb" />
-        </linearGradient>
-      </defs>
-      <line x1="32" y1="32" x2="14" y2="16" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="50" y2="16" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="10" y2="44" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="54" y2="44" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="32" y2="54" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="14" y1="16" x2="50" y2="16" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.2" strokeOpacity="0.25" />
-      <line x1="10" y1="44" x2="54" y2="44" stroke="url(#sidebarSynapseGrad)" strokeWidth="1.2" strokeOpacity="0.25" />
-      <circle cx="14" cy="16" r="5" fill="url(#sidebarSynapseGrad)" opacity="0.7" />
-      <circle cx="50" cy="16" r="5" fill="url(#sidebarSynapseGrad)" opacity="0.7" />
-      <circle cx="10" cy="44" r="4" fill="url(#sidebarSynapseGrad)" opacity="0.55" />
-      <circle cx="54" cy="44" r="4" fill="url(#sidebarSynapseGrad)" opacity="0.55" />
-      <circle cx="32" cy="54" r="4" fill="url(#sidebarSynapseGrad)" opacity="0.55" />
-      <circle cx="32" cy="32" r="9" fill="url(#sidebarSynapseGrad)" />
-      <circle cx="32" cy="32" r="5" fill="white" opacity="0.9" />
-    </svg>
-  )
 }
 
 const NAV_ITEMS: { key: Exclude<HomeSection, 'folder'>; label: string; icon: LucideIcon }[] = [
@@ -229,14 +203,12 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px 20px' }}>
-        <SynaptiqueIcon />
+        <SynaptiqueIcon size={26} />
         <span
           style={{
             fontSize: 15,
             fontWeight: 700,
-            background: 'linear-gradient(135deg, #7c3aed, #2563eb)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: WORDMARK_COLOR,
           }}
         >
           Synaptique

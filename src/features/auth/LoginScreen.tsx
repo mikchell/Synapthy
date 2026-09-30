@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useAuth } from './useAuth'
+import { SynaptiqueIcon, WORDMARK_COLOR } from '../../components/SynaptiqueIcon'
 
 export function LoginScreen() {
   const { signInWithGoogle } = useAuth()
@@ -36,7 +37,7 @@ export function LoginScreen() {
       >
         {/* ロゴ */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <SynaptiqueIcon />
+          <SynaptiqueIcon size={56} />
           <div style={{ textAlign: 'center' }}>
             <h1
               style={{
@@ -44,9 +45,7 @@ export function LoginScreen() {
                 fontSize: 26,
                 fontWeight: 800,
                 letterSpacing: '-0.5px',
-                background: 'linear-gradient(135deg, #7c3aed, #2563eb)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: WORDMARK_COLOR,
               }}
             >
               Synaptique
@@ -91,36 +90,6 @@ export function LoginScreen() {
         </button>
       </motion.div>
     </div>
-  )
-}
-
-function SynaptiqueIcon() {
-  return (
-    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="synapseGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#7c3aed" />
-          <stop offset="100%" stopColor="#2563eb" />
-        </linearGradient>
-      </defs>
-      {/* 接続線 */}
-      <line x1="32" y1="32" x2="14" y2="16" stroke="url(#synapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="50" y2="16" stroke="url(#synapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="10" y2="44" stroke="url(#synapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="54" y2="44" stroke="url(#synapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="32" y1="32" x2="32" y2="54" stroke="url(#synapseGrad)" strokeWidth="1.8" strokeOpacity="0.5" />
-      <line x1="14" y1="16" x2="50" y2="16" stroke="url(#synapseGrad)" strokeWidth="1.2" strokeOpacity="0.25" />
-      <line x1="10" y1="44" x2="54" y2="44" stroke="url(#synapseGrad)" strokeWidth="1.2" strokeOpacity="0.25" />
-      {/* 外側ノード */}
-      <circle cx="14" cy="16" r="5" fill="url(#synapseGrad)" opacity="0.7" />
-      <circle cx="50" cy="16" r="5" fill="url(#synapseGrad)" opacity="0.7" />
-      <circle cx="10" cy="44" r="4" fill="url(#synapseGrad)" opacity="0.55" />
-      <circle cx="54" cy="44" r="4" fill="url(#synapseGrad)" opacity="0.55" />
-      <circle cx="32" cy="54" r="4" fill="url(#synapseGrad)" opacity="0.55" />
-      {/* 中心ノード */}
-      <circle cx="32" cy="32" r="9" fill="url(#synapseGrad)" />
-      <circle cx="32" cy="32" r="5" fill="white" opacity="0.9" />
-    </svg>
   )
 }
 

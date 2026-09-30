@@ -67,3 +67,12 @@ body {
 .react-flow__node:hover .react-flow__handle {
   opacity: 1;
 }
+
+/* 整頓・自動付け替え後の再配置をなめらかに（ドラッグ中は追従を優先し無効化） */
+.react-flow__node {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.react-flow__node.draggable.dragging {
+  transition: none;
+}

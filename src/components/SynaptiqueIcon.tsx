@@ -1,0 +1,20 @@
+// Synaptique のロゴマーク（public/favicon.svg と同じデザイン）
+// 頭文字「S」を、両端がノードの一本の線（思考のつながり）として描いている
+export function SynaptiqueIcon({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect width="64" height="64" rx="14" fill="#18181b" />
+      <path
+        d="M41 19.5 C41 14 23 13.5 23 22 C23 30 41 32 41 41 C41 50.5 23 50 23 44.5"
+        stroke="#fafaf9"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+      />
+      <circle cx="41" cy="19.5" r="5" fill="#fafaf9" />
+      <circle cx="23" cy="44.5" r="5" fill="#ff5a36" />
+    </svg>
+  )
+}
+
+// ロゴ横のサービス名の文字色（単色）
+export const WORDMARK_COLOR = '#18181b'
