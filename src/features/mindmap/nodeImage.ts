@@ -12,9 +12,18 @@ const findNodeImage = (nodeId: string) => {
   return node ? { exists: true, image: (node.data as MindmapNodeData).image } : { exists: false, image: undefined }
 }
 
+// 中心テーマには画像を付けられない
+export const isRootNode = (n: { id: string; data: unknown }) =>
+  n.id === 'root' || !!(n.data as { isRoot?: boolean }).isRoot
+
 // 画像をアップロードしてノードに付ける。すでに画像があれば置き換え、古いファイルは削除する
 // 画像を付けたノードは画像だけを見せたいので、入っていた文字は消す
 export async function attachImageToNode(nodeId: string, file: File): Promise<void> {
+  const target = useMindmapStore.getState().nodes.find((n) => n.id === nodeId)
+  if (target && isRootNode(target)) {
+    toast.info('中心テーマには画像を追加できません')
+    return
+  }
   try {
     const { path, width, height } = await processAndUploadImage(file)
     const { exists, image: previous } = findNodeImage(nodeId)
