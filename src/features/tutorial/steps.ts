@@ -36,6 +36,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     body: '「新規作成」で、新しいマップ（シート）を作れます。作ったマップはカードで並び、クリックすると開きます。',
   },
   {
+    id: 'import',
+    view: 'home',
+    target: '[data-tour="import"]',
+    title: 'Markdown から取り込む',
+    body: '「インポート」で、書き出した Markdown（.md）のファイルを、新しいマップとして取り込めます。今あるマップは変わりません。',
+  },
+  {
     id: 'thumbnail',
     view: 'home',
     target: '[data-tour="sheet-card"]',
@@ -97,6 +104,13 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     target: '[data-tour="toolbar"]',
     title: 'ツールバー',
     body: 'ズーム、全体表示、元に戻す・やり直し、画像の追加は、ここから使えます。',
+  },
+  {
+    id: 'export',
+    view: 'editor',
+    target: '[data-tour="export"]',
+    title: 'PDF・Markdown に書き出す',
+    body: 'ヘッダーの「書き出し」で、このマップを PDF か Markdown（.md）のファイルにできます。Markdown に書き出したものは、ホームの「インポート」で取り込めます。',
   },
   {
     id: 'editor-sidebar',

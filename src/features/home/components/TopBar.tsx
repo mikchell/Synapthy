@@ -129,6 +129,7 @@ export function TopBar({
           <>
             <button
               onClick={() => fileInputRef.current?.click()}
+              data-tour="import"
               title="Markdown（.md）から新しいマップを作成"
               style={{
                 display: 'flex',

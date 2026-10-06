@@ -72,6 +72,7 @@ export function ExportMenu() {
     <div ref={rootRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen((v) => !v)}
+        data-tour="export"
         title="書き出し"
         aria-haspopup="menu"
         aria-expanded={open}
