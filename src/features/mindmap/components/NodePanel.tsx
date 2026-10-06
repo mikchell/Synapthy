@@ -165,7 +165,7 @@ export function NodePanel() {
                   <p style={{ color: 'var(--c-text-3)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0' }}>
                     枠線
                   </p>
-                  {textOnly ? (
+                  {textOnly && (
                     <div style={{ display: 'flex', gap: 6 }}>
                       {[{ label: 'なし', value: false }, { label: 'あり', value: true }].map(({ label, value }) => {
                         const active = selectedNodeShowBorder === value
@@ -188,8 +188,10 @@ export function NodePanel() {
                         )
                       })}
                     </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: 6 }}>
+                  )}
+                  {/* 太さ（文字だけのノードは、枠線を「あり」にしたときだけ選べる） */}
+                  {(!textOnly || selectedNodeShowBorder) && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: textOnly ? 8 : 0 }}>
                       {[1, 3, 5, 8].map((w) => (
                         <button
                           key={w}
