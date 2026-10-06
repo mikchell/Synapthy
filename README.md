@@ -22,8 +22,6 @@
 
 ## 画面例
 
-[<img width="1716" height="967" alt="image" src="https://github.com/user-attachments/assets/7d9eb2a8-4e86-4aae-a33d-79fe4612c1ef" />](https://github.com/user-attachments/assets/094a9491-a5d9-49e8-baa3-4139ba2a2e0a)
-
 ---
 
 ## 主な機能
