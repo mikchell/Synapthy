@@ -31,6 +31,29 @@ const ACTION_BTN: CSSProperties = {
   padding: 0,
 }
 
+// ドラッグ中に表示する画像を、カードを縮めたものにする
+// （大きなカードのままだと、ドロップ先のフォルダを隠してしまい、狙いにくいため）
+const DRAG_IMAGE_WIDTH = 160
+
+function setSmallDragImage(e: React.DragEvent<HTMLElement>) {
+  const clone = e.currentTarget.cloneNode(true) as HTMLElement
+  Object.assign(clone.style, {
+    position: 'fixed',
+    top: '-1000px',
+    left: '-1000px',
+    width: `${DRAG_IMAGE_WIDTH}px`,
+    pointerEvents: 'none',
+    transform: 'none',
+    opacity: '0.9',
+  })
+  // 操作ボタン（ホバー時に出る）は、ドラッグ中の画像には要らない
+  clone.querySelectorAll('button, select').forEach((el) => el.remove())
+  document.body.appendChild(clone)
+  e.dataTransfer.setDragImage(clone, 16, 16)
+  // 画像として取り込まれたあとは不要なので、次のタイミングで外す
+  setTimeout(() => clone.remove(), 0)
+}
+
 export function MapCard({ sheet, viewMode, variant }: Props) {
   const folders = useMindmapStore((s) => s.folders)
   const switchSheet = useMindmapStore((s) => s.switchSheet)
@@ -105,6 +128,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', sheet.id)
           e.dataTransfer.effectAllowed = 'move'
+          setSmallDragImage(e)
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
