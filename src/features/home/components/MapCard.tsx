@@ -15,6 +15,8 @@ interface Props {
   sheet: Sheet
   viewMode: 'grid' | 'list'
   variant: 'normal' | 'trash'
+  // グリッド表示のときのサムネイルの高さ（px）。シートが少ないときは MapGrid が大きくする
+  thumbnailHeight?: number
 }
 
 const ACTION_BTN: CSSProperties = {
@@ -31,7 +33,7 @@ const ACTION_BTN: CSSProperties = {
   padding: 0,
 }
 
-export function MapCard({ sheet, viewMode, variant }: Props) {
+export function MapCard({ sheet, viewMode, variant, thumbnailHeight = 130 }: Props) {
   const folders = useMindmapStore((s) => s.folders)
   const switchSheet = useMindmapStore((s) => s.switchSheet)
   const setCurrentView = useMindmapStore((s) => s.setCurrentView)
@@ -135,7 +137,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
         <div
           style={{
             width: isList ? 110 : '100%',
-            height: isList ? 72 : 130,
+            height: isList ? 72 : thumbnailHeight,
             flexShrink: 0,
             background: 'var(--c-bg-subtle)',
             borderRight: isList ? '1px solid var(--c-border)' : 'none',
