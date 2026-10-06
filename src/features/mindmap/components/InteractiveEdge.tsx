@@ -121,7 +121,7 @@ function InteractiveEdgeComponent({
         d={edgePath}
         fill="none"
         // 色を設定していない線は、エッジに保存された値ではなくテーマの色を使う（ダークモードで見やすい色に切り替わる）
-        style={{ ...restStyle, stroke: lineColor ?? 'var(--c-line)', strokeWidth: LINE_WIDTH, pointerEvents: 'none' }}
+        style={{ ...restStyle, stroke: 'var(--c-sheet-line, var(--c-line))', strokeWidth: LINE_WIDTH, pointerEvents: 'none' }}
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: lineColor ? 0.9 : Number(styleOpacity ?? 0.6) }}
         transition={{
