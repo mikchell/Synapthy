@@ -37,12 +37,12 @@ export function LoginScreen() {
       >
         {/* ロゴ */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <SynaptiqueIcon size={56} />
+          <SynaptiqueIcon size={80} />
           <div style={{ textAlign: 'center' }}>
             <h1
               style={{
                 margin: 0,
-                fontSize: 26,
+                fontSize: 30,
                 fontWeight: 800,
                 letterSpacing: '-0.5px',
                 color: WORDMARK_COLOR,

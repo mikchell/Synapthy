@@ -202,10 +202,10 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px 20px' }}>
-        <SynaptiqueIcon size={26} />
+        <SynaptiqueIcon size={36} />
         <span
           style={{
-            fontSize: 15,
+            fontSize: 18,
             fontWeight: 700,
             color: WORDMARK_COLOR,
           }}

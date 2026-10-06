@@ -51,10 +51,10 @@ export function Header() {
             cursor: 'pointer',
           }}
         >
-          <SynaptiqueIcon size={28} />
+          <SynaptiqueIcon size={isMobile ? 30 : 36} />
           <span
             style={{
-              fontSize: isMobile ? 13 : 16,
+              fontSize: isMobile ? 14 : 18,
               fontWeight: 700,
               color: WORDMARK_COLOR,
             }}
