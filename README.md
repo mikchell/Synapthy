@@ -269,7 +269,7 @@ docs/                   # 設計・運用のドキュメント
 | ファイル | 内容 |
 |---|---|
 | [docs/PRD.md](docs/PRD.md) | プロダクトの要件・非ゴール |
-| [docs/data-structure.md](docs/data-structure.md) | データ構造（ストア・Undo/Redo・同期） |
+| [docs/DATA_STRUCTURE.md](docs/DATA_STRUCTURE.md) | データ構造（ストア・Undo/Redo・同期） |
 | [docs/DATABASE.md](docs/DATABASE.md) | テーブル・ストレージ・RLS・マイグレーション |
 | [docs/SECURITY.md](docs/SECURITY.md) | 認証・アクセス制御・環境変数 |
 | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | カラートークン・テーマ・レイアウト |
