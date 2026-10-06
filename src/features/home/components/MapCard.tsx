@@ -181,7 +181,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
             <input
               ref={inputRef}
               value={draft}
-              maxLength={LIMITS.nameLength}
+              maxLength={LIMITS.sheetNameLength}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commitRename}
               onKeyDown={(e) => {

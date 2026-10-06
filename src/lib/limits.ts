@@ -1,10 +1,12 @@
 import { toast } from 'sonner'
 
-// 悪用対策の上限。supabase/migrations/20261006000002_add_abuse_limits.sql と必ず同じ値にそろえる
+// 悪用対策の上限。supabase/migrations/20261006000002_add_abuse_limits.sql と 20261006000003_shorten_name_limits.sql
+// （名前の長さ）と、必ず同じ値にそろえる
 export const LIMITS = {
   sheets: 100, // ごみ箱に入れたシートも数える
   folders: 50,
-  nameLength: 100, // シート名・フォルダ名
+  sheetNameLength: 30, // シート名
+  folderNameLength: 10, // フォルダ名
   sheetBytes: 2 * 1024 * 1024, // 1シート（nodes / edges など）。DB 側だけで検査する
   images: 200, // 1人あたりの画像の枚数（サムネイルも含む）
   imageBytes: 2 * 1024 * 1024, // 1枚あたり
@@ -31,9 +33,9 @@ export function notifyLimit(kind: LimitKind) {
 }
 
 // 名前を上限の長さに収める。文字（コードポイント）の途中で切らないよう、1文字ずつ数える
-export function clampName(name: string): string {
-  return Array.from(name).slice(0, LIMITS.nameLength).join('')
-}
+const clamp = (name: string, max: number) => Array.from(name).slice(0, max).join('')
+export const clampSheetName = (name: string) => clamp(name, LIMITS.sheetNameLength)
+export const clampFolderName = (name: string) => clamp(name, LIMITS.folderNameLength)
 
 // データベースが返したエラーが、上限によるものかを判定する。上限によるものでなければ null
 export function limitKindOf(error: unknown): LimitKind | null {

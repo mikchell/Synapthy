@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { clampName, LIMITS } from '../../../lib/limits'
+import { clampFolderName, clampSheetName, LIMITS } from '../../../lib/limits'
 import { isSheetLoaded } from '../../../lib/sheetLoad'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
 import { safeLineColor } from '../edgeColor'
@@ -1063,7 +1063,7 @@ export const useMindmapStore = create<MindmapStore>()(
 
       renameSheet: (id, name) => {
         set({
-          sheets: get().sheets.map((s) => (s.id === id ? { ...s, name: clampName(name) } : s)),
+          sheets: get().sheets.map((s) => (s.id === id ? { ...s, name: clampSheetName(name) } : s)),
         })
       },
 
@@ -1137,7 +1137,7 @@ export const useMindmapStore = create<MindmapStore>()(
       },
 
       createFolder: (name) => {
-        const trimmed = clampName(name.trim())
+        const trimmed = clampFolderName(name.trim())
         if (!trimmed) return true
         if (get().folders.length >= LIMITS.folders) return false
         set({ folders: [...get().folders, { id: crypto.randomUUID(), name: trimmed }] })
@@ -1145,7 +1145,7 @@ export const useMindmapStore = create<MindmapStore>()(
       },
 
       renameFolder: (id, name) => {
-        const trimmed = clampName(name.trim())
+        const trimmed = clampFolderName(name.trim())
         if (!trimmed) return
         set({ folders: get().folders.map((f) => (f.id === id ? { ...f, name: trimmed } : f)) })
       },
