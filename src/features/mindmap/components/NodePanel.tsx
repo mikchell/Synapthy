@@ -227,7 +227,7 @@ export function NodePanel() {
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => selectedNodeId && updateNodeTextStyle(selectedNodeId, { bold: !selectedNodeBold, textColor: selectedNodeTextColor })}
+                      onClick={() => selectedNodeId && updateNodeTextStyle(selectedNodeId, { bold: !selectedNodeBold, textColor: selectedNodeTextColor }, { bold: true })}
                       title="太字"
                       style={{
                         width: 28, height: 28, borderRadius: 8, padding: 0, cursor: 'pointer',
@@ -245,7 +245,7 @@ export function NodePanel() {
                       return (
                         <button
                           key={c.label}
-                          onClick={() => selectedNodeId && updateNodeTextStyle(selectedNodeId, { bold: selectedNodeBold, textColor: c.value })}
+                          onClick={() => selectedNodeId && updateNodeTextStyle(selectedNodeId, { bold: selectedNodeBold, textColor: c.value }, { color: true })}
                           title={c.label}
                           style={{
                             width: 18, height: 18, borderRadius: '50%', padding: 0, cursor: 'pointer',

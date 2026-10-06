@@ -109,6 +109,17 @@ export function toggleBold(label: string, spans: LabelSpan[] | undefined, start:
   return result.length > 0 ? result : undefined
 }
 
+// 範囲の太字を、付ける／外すのどちらかに揃える（toggleBold と違い、現在の状態に関係なく指定どおりにする）
+export function setBold(label: string, spans: LabelSpan[] | undefined, start: number, end: number, bold: boolean): LabelSpan[] | undefined {
+  const chars = toCharStyles(label.length, spans)
+  for (let i = Math.max(0, start); i < Math.min(end, chars.length); i++) {
+    if (bold) chars[i].bold = true
+    else delete chars[i].bold
+  }
+  const result = fromCharStyles(chars)
+  return result.length > 0 ? result : undefined
+}
+
 // 範囲に色を付ける。color が undefined なら色を外す
 export function setColor(label: string, spans: LabelSpan[] | undefined, start: number, end: number, color: string | undefined): LabelSpan[] | undefined {
   const safe = safeTextColor(color)

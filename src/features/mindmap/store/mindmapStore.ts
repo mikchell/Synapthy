@@ -12,7 +12,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
 import { safeLineColor } from '../edgeColor'
-import { remapSpans, safeTextColor, type LabelSpan } from '../labelStyle'
+import { remapSpans, safeTextColor, setBold, setColor, type LabelSpan } from '../labelStyle'
 
 export type NodeColor = 'purple' | 'blue' | 'cyan' | 'green' | 'pink' | 'orange'
 export type MapType = 'linear' | 'free'
@@ -102,7 +102,8 @@ interface MindmapStore {
   // 文字と、文字の一部分の装飾（labelStyles）をまとめて更新する（編集の確定用）
   commitNodeLabel: (id: string, label: string, labelStyles: LabelSpan[] | undefined) => void
   // ノード全体の太字・色。undefined を渡した項目は解除する
-  updateNodeTextStyle: (id: string, style: { bold?: boolean; textColor?: string }) => void
+  // clear を指定すると、文字の一部分だけの装飾（labelStyles）の太字／色も解除して、全体の設定が見た目に効くようにする
+  updateNodeTextStyle: (id: string, style: { bold?: boolean; textColor?: string }, clear?: { bold?: boolean; color?: boolean }) => void
   updateNodeColor: (id: string, color: NodeColor) => void
   updateNodeMemo: (id: string, memo: string) => void
   setNodeImage: (id: string, image: NodeImage | null) => void
@@ -758,7 +759,7 @@ export const useMindmapStore = create<MindmapStore>()(
         })
       },
 
-      updateNodeTextStyle: (id, style) => {
+      updateNodeTextStyle: (id, style, clear) => {
         set({
           nodes: get().nodes.map((n) => {
             if (n.id !== id || n.type !== 'mindmapNode') return n
@@ -768,6 +769,13 @@ export const useMindmapStore = create<MindmapStore>()(
             const color = safeTextColor(style.textColor)
             if (color) next.textColor = color
             else delete next.textColor
+            if (clear && next.labelStyles) {
+              let spans: LabelSpan[] | undefined = next.labelStyles
+              if (clear.bold) spans = setBold(next.label, spans, 0, next.label.length, false)
+              if (clear.color) spans = setColor(next.label, spans, 0, next.label.length, undefined)
+              if (spans) next.labelStyles = spans
+              else delete next.labelStyles
+            }
             return { ...n, data: next }
           }),
         })
