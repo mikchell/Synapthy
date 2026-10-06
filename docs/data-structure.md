@@ -179,6 +179,8 @@ DBのテーブルとは別に、ガイドツアーの完了フラグを、ログ
 | `synaptique:editor-sidebar-open` | 編集画面のサイドバーを開いているか（`'false'` のとき閉じている） | `EditorSidebar.tsx` |
 | `ore-no-mindmap-storage` | 旧バージョンのキャッシュ。現在は使わず、ログイン時に削除する | `useAuth.ts` |
 
+`synaptique-` で始まるキー名は、改名前のアプリ名（Synaptique）のまま残しています。ユーザーには見えない内部名で、変えると保存済みの設定が消えるためです。新しいキーを追加するときは、アプリ名（`synapthy-`）で始めてください。
+
 ---
 
 ## Supabase DB

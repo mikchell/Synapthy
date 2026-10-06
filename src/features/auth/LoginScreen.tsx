@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useAuth } from './useAuth'
-import { SynaptiqueIcon, WORDMARK_COLOR } from '../../components/SynaptiqueIcon'
+import { SynapthyIcon, WORDMARK_COLOR } from '../../components/SynapthyIcon'
 
 export function LoginScreen() {
   const { signInWithGoogle } = useAuth()
@@ -37,7 +37,7 @@ export function LoginScreen() {
       >
         {/* ロゴ */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <SynaptiqueIcon size={80} />
+          <SynapthyIcon size={80} />
           <div style={{ textAlign: 'center' }}>
             <h1
               style={{
@@ -48,7 +48,7 @@ export function LoginScreen() {
                 color: WORDMARK_COLOR,
               }}
             >
-              Synaptique
+              Synapthy
             </h1>
             <p style={{ margin: '6px 0 0', color: 'var(--c-text-3)', fontSize: 13 }}>
               アイデアをつなげよう

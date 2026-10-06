@@ -25,7 +25,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'welcome',
     view: 'home',
     intro: true,
-    title: 'Synaptique へようこそ',
+    title: 'Synapthy へようこそ',
     body: 'アイデアをマインドマップで整理するアプリです。1分ほどで、基本の使い方をご案内します。',
   },
   {

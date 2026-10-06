@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Loader2, Save } from 'lucide-react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { useMindmapStore } from '../store/mindmapStore'
-import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
+import { SynapthyIcon, WORDMARK_COLOR } from '../../../components/SynapthyIcon'
 import { ExportMenu } from './ExportMenu'
 
 export function Header() {
@@ -46,7 +46,7 @@ export function Header() {
             cursor: 'pointer',
           }}
         >
-          <SynaptiqueIcon size={isMobile ? 30 : 36} />
+          <SynapthyIcon size={isMobile ? 30 : 36} />
           <span
             style={{
               fontSize: isMobile ? 14 : 18,
@@ -54,7 +54,7 @@ export function Header() {
               color: WORDMARK_COLOR,
             }}
           >
-            Synaptique
+            Synapthy
           </span>
         </button>
 

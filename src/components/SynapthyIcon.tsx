@@ -1,6 +1,6 @@
-// Synaptique のロゴマーク（public/favicon.svg と同じデザイン）
+// Synapthy のロゴマーク（public/favicon.svg と同じデザイン）
 // 頭文字「S」を、両端がノードの一本の線（思考のつながり）として描いている
-export function SynaptiqueIcon({ size = 28 }: { size?: number }) {
+export function SynapthyIcon({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <rect width="64" height="64" rx="14" fill="var(--c-logo-bg)" />
