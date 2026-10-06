@@ -67,4 +67,4 @@ src/features/<feature>/
 ## コミット・PR
 
 - Conventional Commits形式、メッセージは日本語（`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` など）
-- ブランチ運用・PRフローは `CLAUDE.md` と `AGENTS.md` を参照
+- ブランチ運用・PRフロー・公開リポジトリでの情報管理のルールは `AGENTS.md` を参照（`CLAUDE.md` は、これを取り込んでいる）

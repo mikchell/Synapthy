@@ -13,7 +13,7 @@ Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに�
 | `id` | `uuid` | PK, `gen_random_uuid()` | シートID |
 | `user_id` | `uuid` | FK → `auth.users.id`, `on delete cascade` | 所有者。INSERTトリガーで `auth.uid()` を自動セット |
 | `name` | `text` | `not null default 'シート1'`, `check (char_length(name) <= 30)` | シート名。30文字まで |
-| `data` | `jsonb` | `not null default '{"nodes":[],"edges":[]}'`, `check (octet_length(data::text) <= 2097152)` | `{ mapType, nodes, edges }` をまとめて格納。2MBまで |
+| `data` | `jsonb` | `not null default '{"nodes":[],"edges":[]}'`, `check (octet_length(data::text) <= 2097152)` | `{ mapType, nodes, edges, ... }` をまとめて格納（サムネイル・線の色もここに入る）。2MBまで |
 | `is_starred` | `boolean` | `not null default false` | スター（お気に入り） |
 | `deleted_at` | `timestamptz` | `null` 可 | ゴミ箱に入れた日時。`null` = 未削除 |
 | `last_opened_at` | `timestamptz` | `not null default now()` | 最後に開いた日時 |
@@ -108,4 +108,4 @@ idx_sheets_user_id_folder_id    -- user_id + folder_id（フォルダ別一覧�
 
 `src/lib/sheetsApi.ts`（`sheets` / `folders` の CRUD）と `src/lib/imageApi.ts`（`node-images` の CRUD・画像圧縮）に集約されている。データ（テーブル・ストレージ）への問い合わせはこの2ファイル経由のみに統一し、コンポーネントやストアから直接 `supabase` クライアントを呼ばない方針。認証まわりの例外は [SECURITY.md](./SECURITY.md#クライアント側の方針) を参照。
 
-フロントエンドとの同期方式（デバウンス保存・即時保存の区別）は [data-structure.md](./data-structure.md#データフロー) を参照。
+フロントエンドとの同期方式（デバウンス保存・即時保存の区別）は [DATA_STRUCTURE.md](./DATA_STRUCTURE.md#データフロー) を参照。

@@ -186,52 +186,12 @@ DBのテーブルとは別に、ガイドツアーの完了フラグを、ログ
 
 ## Supabase DB
 
-### `sheets` テーブル
+テーブル（`sheets` / `folders`）、Storage（`node-images`）、トリガー、インデックス、RLS、利用上限、マイグレーションは、[DATABASE.md](./DATABASE.md) にまとめています。ここでは、フロントエンドのデータ構造との対応だけを書きます。
 
-| カラム | 型 | 説明 |
-|---|---|---|
-| `id` | `uuid` | PK（`gen_random_uuid()`） |
-| `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | シート名。30文字まで |
-| `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[], ... }`（サムネイル・線の色もここに入る）。2MBまで |
-| `is_starred` | `boolean` | スター（お気に入り）フラグ |
-| `deleted_at` | `timestamptz` \| `null` | ゴミ箱に入れた日時。null なら未削除 |
-| `last_opened_at` | `timestamptz` | 最後に開いた日時 |
-| `folder_id` | `uuid` \| `null` | 所属フォルダ（`folders.id`）。フォルダ削除時は `null` に戻る |
-| `created_at` | `timestamptz` | 作成日時 |
-| `updated_at` | `timestamptz` | 更新日時（トリガーで自動更新） |
-
-RLS により、ユーザーは自分の行のみ参照・作成・更新・削除できます（詳細は [SECURITY.md](./SECURITY.md)）。
-
-1人あたりのシート数（100枚。ごみ箱も数える）・フォルダ数（50個）にも上限があります。詳細は [DATABASE.md](./DATABASE.md#利用上限悪用対策) を参照してください。
-
-`nodes` / `edges` / `mapType` は `data` カラムに JSONB としてまとめて格納しています。シートを開く際は1行まるごと取得、保存時も1行まるごと上書き（upsert）するため、クエリがシンプルに保てます。
-
-### `folders` テーブル
-
-| カラム | 型 | 説明 |
-|---|---|---|
-| `id` | `uuid` | PK |
-| `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | フォルダ名。10文字まで |
-| `created_at` | `timestamptz` | 作成日時 |
-
-フラット構造（フォルダの中にフォルダは作れない）で、1シートは最大1フォルダに属します。
-
-### Storage: `node-images` バケット
-
-ノードに貼り付けた画像の保存先（非公開バケット、署名付きURLで配信）。パスは `{auth.uid()}/{ファイル名}` 形式で、RLS相当のストレージポリシーにより自分のフォルダ配下のみ操作可能です。1ファイル2MB・1人200枚まで、形式は WebP / PNG / JPEG / GIF のみです。詳細は [DATABASE.md](./DATABASE.md) と [SECURITY.md](./SECURITY.md) を参照してください。
-
-### インデックス
-
-```sql
-idx_sheets_user_id              -- user_id による絞り込みを高速化
-idx_sheets_user_id_created_at   -- user_id + created_at ORDER BY を高速化
-idx_sheets_user_id_deleted_at   -- ゴミ箱一覧・アクティブ一覧の絞り込みを高速化
-idx_sheets_user_id_folder_id    -- フォルダ別の絞り込みを高速化
-```
-
-マイグレーション一覧は `supabase/migrations/` を参照してください。
+- `Sheet` の `nodes` / `edges` / `mapType` は、`sheets.data` カラムに JSONB としてまとめて格納しています。サムネイル（`thumbnailPath`）と線の色（`lineColor`）も `data` の中に入ります
+- 名前・スター・ごみ箱（`deletedAt`）・最終使用日時・フォルダは、専用の列に持ちます。`nodes` / `edges` を読み込んでいなくても、これらだけを更新できます（[シートの中身の遅延読み込み](#シートの中身の遅延読み込み)）
+- シートを開くときは、そのシートの1行をまるごと取得します。保存も1行まるごと上書き（upsert）するため、クエリがシンプルに保てます
+- RLS により、ユーザーは自分の行だけを参照・作成・更新・削除できます（[SECURITY.md](./SECURITY.md)）
 
 ---
 
