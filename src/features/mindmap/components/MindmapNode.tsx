@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
 import { safeLineColor } from '../edgeColor'
-import { rangeStyle, remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
+import { displayTextColor, rangeStyle, remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
 import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
@@ -110,7 +110,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   // 子がいるノードの右には、線が枝分かれする「分岐点の丸」を出す
   const hasChildren = useMindmapStore((s) => !isFree && s.edges.some((e) => e.source === id))
   // シートで設定した線の色。分岐点の丸と短い線にも同じ色を使う
-  const lineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor)) ?? 'var(--c-line)'
+  const lineColor = displayTextColor(useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor))) ?? 'var(--c-line)'
   const isMobile = useIsMobile()
   const updateNodeSize = useMindmapStore((s) => s.updateNodeSize)
   const setNodeImage = useMindmapStore((s) => s.setNodeImage)
@@ -148,7 +148,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     borderRadius: Math.round(baseSz.borderRadius * stepScale),
   }, [baseSz, stepScale])
   // ノード全体の文字色・太さ（未設定なら今まで通り）
-  const nodeTextColor = safeTextColor(data.textColor) ?? (textOnly ? 'var(--c-text)' : colors.text)
+  const nodeTextColor = displayTextColor(data.textColor) ?? (textOnly ? 'var(--c-text)' : colors.text)
   const nodeFontWeight = data.bold ? 700 : textOnly ? 500 : sz.fontWeight
   // フリーモードは縦パディングを2.5倍にしてアスペクト比を約1.1:1に（楕円が丸く見える）
   // 画像付きのノードは、楕円だと画像の角がはみ出すので角丸の四角にする
@@ -498,7 +498,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               gridArea: '1 / 1',
               // 未入力のときだけ薄い「アイデア」を仮表示し、入力があれば幅合わせ専用として隠す
               visibility: draft ? 'hidden' : 'visible',
-              color: uniformStyle?.color ?? nodeTextColor,
+              color: displayTextColor(uniformStyle?.color) ?? nodeTextColor,
               opacity: 0.35,
               pointerEvents: 'none',
               whiteSpace: 'pre',
@@ -530,7 +530,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               padding: 0,
               margin: 0,
               font: 'inherit',
-              color: uniformStyle?.color ?? nodeTextColor,
+              color: displayTextColor(uniformStyle?.color) ?? nodeTextColor,
               fontSize,
               fontWeight: uniformStyle?.bold ? 700 : nodeFontWeight,
               lineHeight: 1.4,
@@ -555,7 +555,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         >
           {data.label
             ? toSegments(data.label, data.labelStyles).map((seg, i) => (
-                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: seg.color }}>{seg.text}</span>
+                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: displayTextColor(seg.color) }}>{seg.text}</span>
               ))
             : PLACEHOLDER_LABEL}
         </p>
@@ -588,7 +588,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               title={`${c.label}（文字を選んでいれば選んだ部分、選んでいなければ全体）`}
               onClick={() => applyColor(c.value)}
               // 選択中は、丸の大きさ（18px）を変えずに、内側にリングを描く（色の部分が少し小さくなる）
-              style={{ width: 18, height: 18, flexShrink: 0, borderRadius: '50%', border: `2px solid ${activeColor === c.value ? 'var(--c-accent)' : 'var(--c-surface)'}`, boxShadow: activeColor === c.value ? 'inset 0 0 0 2px var(--c-surface)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
+              style={{ width: 18, height: 18, flexShrink: 0, borderRadius: '50%', border: `2px solid ${activeColor === c.value ? 'var(--c-accent)' : 'var(--c-surface)'}`, boxShadow: activeColor === c.value ? 'inset 0 0 0 2px var(--c-surface)' : '0 0 0 1px var(--c-border)', background: `var(--tc-${c.id})`, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
@@ -601,7 +601,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
           {draftSpans && draft && (
             <span style={{ marginLeft: 4, paddingLeft: 8, borderLeft: '1px solid var(--c-border)', fontSize: 12, color: nodeTextColor, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {toSegments(draft, draftSpans).map((seg, i) => (
-                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: seg.color }}>{seg.text}</span>
+                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: displayTextColor(seg.color) }}>{seg.text}</span>
               ))}
             </span>
           )}

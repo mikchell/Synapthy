@@ -16,14 +16,22 @@ export interface LabelSegment {
   color?: string
 }
 
-// 文字の色パレット（ライト・ダークのどちらでも読める中間の濃さ）。保存・描画ともにこの中の値だけ受け付ける
+// 文字の色パレット。保存・描画ともにこの中の値だけ受け付ける
+// value は保存する値（ライトテーマでの色）。画面に出すときは displayTextColor を通して、
+// ダークテーマでは同じ色味の明るい版（index.css の --tc-<id>）に切り替える
 export const TEXT_COLORS = [
-  { label: '赤', value: '#dc2626' },
-  { label: 'オレンジ', value: '#ea580c' },
-  { label: '緑', value: '#16a34a' },
-  { label: '青', value: '#2563eb' },
-  { label: '紫', value: '#7c3aed' },
+  { id: 'red', label: '赤', value: '#dc2626' },
+  { id: 'orange', label: 'オレンジ', value: '#ea580c' },
+  { id: 'green', label: '緑', value: '#16a34a' },
+  { id: 'blue', label: '青', value: '#2563eb' },
+  { id: 'purple', label: '紫', value: '#7c3aed' },
 ] as const
+
+// 保存してある色を、いまのテーマで読みやすい色（CSS変数）にして返す。パレットにない値は undefined
+export const displayTextColor = (color: unknown): string | undefined => {
+  const entry = TEXT_COLORS.find((c) => c.value === color)
+  return entry ? `var(--tc-${entry.id})` : undefined
+}
 
 const ALLOWED_COLORS: ReadonlySet<string> = new Set(TEXT_COLORS.map((c) => c.value))
 

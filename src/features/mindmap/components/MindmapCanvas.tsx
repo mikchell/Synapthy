@@ -21,6 +21,7 @@ import { MindmapNode } from './MindmapNode'
 import { ImageNode } from './ImageNode'
 import { InteractiveEdge } from './InteractiveEdge'
 import { safeLineColor } from '../edgeColor'
+import { displayTextColor } from '../labelStyle'
 import { NodePanel } from './NodePanel'
 import { Toolbar } from './Toolbar'
 import { HelpHint } from './HelpHint'
@@ -182,7 +183,7 @@ function MindmapFlow() {
   return (
     <div
       ref={containerRef}
-      style={{ width: '100vw', height: '100vh', paddingTop: 56, ...(lineColor ? ({ '--c-sheet-line': lineColor } as React.CSSProperties) : {}) }}
+      style={{ width: '100vw', height: '100vh', paddingTop: 56, ...(lineColor ? ({ '--c-sheet-line': displayTextColor(lineColor) } as React.CSSProperties) : {}) }}
     >
       <ReactFlow
         nodes={nodes}
