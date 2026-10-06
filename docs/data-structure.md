@@ -29,6 +29,18 @@ interface MindmapNodeData {
   isCircle?: boolean      // 円形ノードにするか
   showBorder?: boolean    // 文字だけのノード（中心テーマ以外）に枠線を表示するか。未指定＝非表示
   image?: NodeImage        // ノードに付けた画像（文字の上に表示）
+  bold?: boolean           // ノード全体の太字
+  textColor?: string       // ノード全体の文字色（labelStyle.ts の TEXT_COLORS のいずれか）
+  labelStyles?: LabelSpan[] // 文字の一部分だけの装飾（ノード全体の設定より優先）
+}
+
+// 文字の一部分の装飾（src/features/mindmap/labelStyle.ts）
+// HTML は保存せず、範囲ごとの配列で持つ。start/end は label の UTF-16 インデックス（end は含まない）
+interface LabelSpan {
+  start: number
+  end: number
+  bold?: boolean
+  color?: string          // TEXT_COLORS のいずれか。それ以外の値は描画時に無視する
 }
 
 // ノードに貼り付けた画像の保存情報
