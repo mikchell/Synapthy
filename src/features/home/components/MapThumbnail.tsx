@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getNodeImageSignedUrl } from '../../../lib/imageApi'
+import { findTemplate, isTemplatePath } from '../../../lib/thumbnailTemplates'
 
 interface Props {
   sheetId: string
@@ -23,8 +24,11 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
   const [loaded, setLoaded] = useState<{ path: string; url: string } | null>(null)
   const [failedPath, setFailedPath] = useState<string | null>(null)
 
+  // テンプレート画像は同梱の静的ファイルなので、署名付きURLは要らない
+  const templateSrc = findTemplate(thumbnailPath)?.src
+
   useEffect(() => {
-    if (!thumbnailPath) return
+    if (!thumbnailPath || isTemplatePath(thumbnailPath)) return
     let cancelled = false
     getNodeImageSignedUrl(thumbnailPath)
       .then((url) => { if (!cancelled) setLoaded({ path: thumbnailPath, url }) })
@@ -33,7 +37,7 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
   }, [thumbnailPath])
 
   // 取得中・取得に失敗したときは、パステルカラーのままにしておく
-  const url = thumbnailPath && loaded?.path === thumbnailPath && failedPath !== thumbnailPath ? loaded.url : null
+  const url = templateSrc ?? (thumbnailPath && !isTemplatePath(thumbnailPath) && loaded?.path === thumbnailPath && failedPath !== thumbnailPath ? loaded.url : null)
 
   return (
     <div style={{ width: '100%', height: '100%', background: pastelColor(sheetId) }}>

@@ -1,5 +1,6 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
+import { isTemplatePath } from './thumbnailTemplates'
 import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
 
 const BUCKET = 'node-images'
@@ -99,14 +100,17 @@ export async function getNodeImageSignedUrl(path: string): Promise<string> {
 }
 
 export async function deleteNodeImage(path: string): Promise<void> {
+  // サムネイルのテンプレートは同梱の画像なので、Storage からは消さない
+  if (isTemplatePath(path)) return
   const { error } = await supabase.storage.from(BUCKET).remove([path])
   if (error) throw error
 }
 
 // 複数の画像をまとめて削除（シートの完全削除・リセット時の孤立ファイル掃除用）
 export async function deleteNodeImages(paths: string[]): Promise<void> {
-  if (paths.length === 0) return
-  const { error } = await supabase.storage.from(BUCKET).remove(paths)
+  const storagePaths = paths.filter((p) => !isTemplatePath(p))
+  if (storagePaths.length === 0) return
+  const { error } = await supabase.storage.from(BUCKET).remove(storagePaths)
   if (error) throw error
 }
 
