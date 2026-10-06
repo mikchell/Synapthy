@@ -17,9 +17,10 @@ const NODE_DEBOUNCE_MS = 1000   // ノード・エッジ変更の保存間隔
 const SHEET_DEBOUNCE_MS = 2000  // シートメタ変更の保存間隔
 const FOLDER_DEBOUNCE_MS = 1000 // フォルダ変更の保存間隔
 
-// name/star/trash/最終使用日時/所属フォルダのいずれかが変わったら再保存が必要
+// name/star/trash/最終使用日時/所属フォルダ/サムネイルのいずれかが変わったら再保存が必要
+// （isTrashChange が deletedAt を先頭から3番目で読むので、項目を足すときは末尾に足す）
 const metaKeyOf = (s: Sheet) =>
-  `${s.name}|${s.isStarred}|${s.deletedAt ?? ''}|${s.lastOpenedAt}|${s.folderId ?? ''}`
+  `${s.name}|${s.isStarred}|${s.deletedAt ?? ''}|${s.lastOpenedAt}|${s.folderId ?? ''}|${s.thumbnailPath ?? ''}`
 const folderKeyOf = (f: Folder) => f.name
 
 export function useSheetsSync(user: User | null) {

@@ -1,11 +1,12 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
-import type { AnyNodeData, ImageNodeData, MindmapNodeData } from '../features/mindmap/store/mindmapStore'
+import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
 
 const BUCKET = 'node-images'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 7 // 7日
 const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024 // 20MB（これを超える貼り付けは処理前に弾く）
 const MAX_UPLOAD_DIM = 1600 // アップロードする画像の最大辺（px）
+const MAX_THUMBNAIL_DIM = 640 // サムネイル画像の最大辺（px）。カードに小さく表示するだけなので小さく保存する
 const UPLOAD_QUALITY = 0.85
 const DISPLAY_MAX_DIM = 320 // ボード上に置いたときの初期表示サイズの最大辺（px）
 
@@ -20,11 +21,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 // 貼り付けた画像を最大1600pxに縮小・WebP再圧縮してからアップロードする
 // （ノート: 巨大なスクリーンショットをそのまま保存するとストレージ容量を圧迫するため）
-async function compressForUpload(file: File): Promise<File> {
+async function compressForUpload(file: File, maxDim = MAX_UPLOAD_DIM): Promise<File> {
   const objectUrl = URL.createObjectURL(file)
   try {
     const img = await loadImage(objectUrl)
-    const scale = Math.min(1, MAX_UPLOAD_DIM / Math.max(img.naturalWidth, img.naturalHeight))
+    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight))
     const canvas = document.createElement('canvas')
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
     canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
@@ -45,7 +46,10 @@ async function compressForUpload(file: File): Promise<File> {
 }
 
 // クリップボードの画像を圧縮した上でSupabase Storageにアップロードし、保存用のパスを返す
-export async function uploadNodeImage(file: File): Promise<string> {
+export async function uploadNodeImage(file: File, maxDim = MAX_UPLOAD_DIM): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('画像ファイルを選んでください')
+  }
   if (file.size > MAX_ORIGINAL_BYTES) {
     throw new Error('画像サイズが大きすぎます（20MBまで）')
   }
@@ -53,7 +57,7 @@ export async function uploadNodeImage(file: File): Promise<string> {
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData.user) throw userError ?? new Error('未ログインです')
 
-  const uploadFile = await compressForUpload(file)
+  const uploadFile = await compressForUpload(file, maxDim)
   const ext = uploadFile.type.split('/')[1] ?? 'png'
   const path = `${userData.user.id}/${crypto.randomUUID()}.${ext}`
 
@@ -61,6 +65,9 @@ export async function uploadNodeImage(file: File): Promise<string> {
   if (error) throw error
   return path
 }
+
+// ホームのカードのサムネイル用に、画像を縮小してアップロードし、保存用のパスを返す
+export const uploadThumbnailImage = (file: File) => uploadNodeImage(file, MAX_THUMBNAIL_DIM)
 
 // 画像ファイルをアップロードし、ボードに置くための情報（保存パス・初期表示サイズ）を返す
 // クリップボード貼り付け・ファイル選択どちらの入力経路からも共通で使う
@@ -111,4 +118,10 @@ export function getImagePaths(nodes: Node<AnyNodeData>[]): string[] {
     const image = (n.data as MindmapNodeData).image
     return image ? [image.path] : []
   })
+}
+
+// シートが参照しているストレージパス（ノードの画像とサムネイル）。完全削除時の孤立ファイル掃除用
+export function getSheetImagePaths(sheet: Pick<Sheet, 'nodes' | 'thumbnailPath'>): string[] {
+  const paths = getImagePaths(sheet.nodes)
+  return sheet.thumbnailPath ? [...paths, sheet.thumbnailPath] : paths
 }
