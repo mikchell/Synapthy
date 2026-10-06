@@ -25,7 +25,8 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
   const [failedPath, setFailedPath] = useState<string | null>(null)
 
   // テンプレート画像は同梱の静的ファイルなので、署名付きURLは要らない
-  const templateSrc = findTemplate(thumbnailPath)?.src
+  const template = findTemplate(thumbnailPath)
+  const templateSrc = template?.src
 
   useEffect(() => {
     if (!thumbnailPath || isTemplatePath(thumbnailPath)) return
@@ -47,7 +48,7 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
           alt=""
           draggable={false}
           onError={() => setFailedPath(thumbnailPath ?? null)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: template?.position, display: 'block' }}
         />
       )}
     </div>
