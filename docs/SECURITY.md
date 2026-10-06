@@ -52,7 +52,7 @@
 
 | ヘッダー | 内容 |
 |---|---|
-| `Content-Security-Policy` | スクリプトは自分のオリジンのみ（`script-src 'self'`）。通信・画像は自分のオリジンと Supabase（`*.supabase.co`）、アバター画像は `*.googleusercontent.com` のみ許可。フォントは Google Fonts のみ。`frame-ancestors 'none'`、`object-src 'none'`、`base-uri 'self'`、`form-action 'self'` |
+| `Content-Security-Policy` | スクリプトは自分のオリジンのみ（`script-src 'self'`）。通信・画像は、自分のオリジンと、**このアプリの Supabase プロジェクトの URL だけ**（ワイルドカードの `*.supabase.co` にはしない）。アバター画像は `*.googleusercontent.com` のみ許可。WebSocket（Realtime）は使っていないので、許可していない。フォントは Google Fonts のみ。`frame-ancestors 'none'`、`object-src 'none'`、`base-uri 'self'`、`form-action 'self'` |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY`（クリックジャッキング対策。`frame-ancestors` の古いブラウザ向けの補完） |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
@@ -60,6 +60,9 @@
 
 - テーマの初期化スクリプトは `public/theme-init.js` に分けてある。`index.html` にインラインスクリプトを書くと、CSP の `script-src 'self'` に拒否されるため
 - 外部のドメインを使う機能を足すときは、`vercel.json` の `Content-Security-Policy` に許可するドメインを足す（足さないと、本番だけ通信や画像が拒否される。開発サーバーにはこのヘッダーは付かない）
+- Supabase を `*.supabase.co` のワイルドカードで許可しないのは、万一スクリプトを差し込まれたときに、**他人の Supabase プロジェクトへデータを送れてしまわない**ようにするため。supabase-js が通信する宛先（認証・REST・ストレージ）は、どれもプロジェクトの URL と同じホスト
+- **Supabase のプロジェクトを変えるとき（URL が変わるとき）は、`vercel.json` の CSP のプロジェクトの URL も変える**（変えないと、本番のログインやデータの保存が、通信を拒否されて止まる）。カスタムドメインや、Realtime・Edge Functions を使い始めるときも、許可先を見直す
+- `npm run check:csp`（`scripts/check-csp.mjs`）で、CSP を検査できる。ワイルドカードが無いこと、Supabase の許可先がプロジェクトの URL だけであること、supabase-js が実際に通信する宛先（認証・REST・ストレージ）がすべて許可されていることを確かめる。supabase-js の更新で宛先のホストが変わったときに、気づくためのもの。`node --env-file=.env.local scripts/check-csp.mjs` で、環境変数の URL とも突き合わせられる
 - `style-src` は `'unsafe-inline'` を許可している。トースト（sonner）が実行時に `<style>` を差し込むため
 
 ## 環境変数
