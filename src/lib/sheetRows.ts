@@ -1,4 +1,4 @@
-import type { Sheet } from '../features/mindmap/store/mindmapStore'
+import type { Sheet } from '../types/sheet'
 
 // ノードの中身（nodes / edges）を読み込んでいるか。
 // 読み込んでいないシートは、中身が空になっている。そのシートの中身を DB に書き込んではいけない（空で上書きして消してしまうため）。

@@ -2,9 +2,10 @@ import { EdgeLabelRenderer, type EdgeProps, getStraightPath, useInternalNode } f
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { memo, useRef, useState } from 'react'
-import { useMindmapStore, type MindmapNodeData } from '../store/mindmapStore'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { MindmapNodeData } from '../../../types/mindmap'
 import { JUNCTION_OFFSET, LINE_WIDTH } from './logicTree'
-import { safeLineColor } from '../edgeColor'
+import { safeLineColor } from '../utils/edgeColor'
 
 function ellipseBorderPoint(
   cx: number, cy: number,

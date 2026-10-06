@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
-import { deleteNodeImage, processAndUploadImage } from '../../lib/imageApi'
-import { useMindmapStore, type MindmapNodeData } from './store/mindmapStore'
+import { deleteNodeImage, processAndUploadImage } from '../../../lib/imageApi'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { MindmapNodeData } from '../../../types/mindmap'
 
 // ノードに付ける画像の操作（ファイル選択と貼り付けの両方から使う）
 

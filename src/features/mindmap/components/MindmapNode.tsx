@@ -5,11 +5,13 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
-import { safeLineColor } from '../edgeColor'
-import { displayTextColor, rangeStyle, remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
-import { attachImageToNode, removeImageFromNode } from '../nodeImage'
+import { safeLineColor } from '../utils/edgeColor'
+import { displayTextColor, rangeStyle, remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments } from '../utils/labelStyle'
+import type { LabelSpan } from '../../../types/mindmap'
+import { attachImageToNode, removeImageFromNode } from '../utils/nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
-import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { MindmapNodeData, NodeColor, FreeDirection } from '../../../types/mindmap'
 
 export const COLOR_MAP: Record<NodeColor, { bg: string; border: string; glow: string; text: string }> = {
   purple: { bg: 'var(--node-purple-bg)', border: 'rgba(139, 92, 246, 0.4)', glow: 'rgba(139, 92, 246, 0.12)', text: 'var(--node-purple-text)' },

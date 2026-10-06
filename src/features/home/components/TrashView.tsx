@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { useMindmapStore, type Sheet } from '../../mindmap/store/mindmapStore'
+import { useMindmapStore } from '../../mindmap/store/mindmapStore'
+import type { Sheet } from '../../../types/sheet'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { collectSheetImagePaths, deleteNodeImages } from '../../../lib/imageApi'
 import { MapGrid } from './MapGrid'

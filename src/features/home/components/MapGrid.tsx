@@ -1,4 +1,4 @@
-import type { Sheet } from '../../mindmap/store/mindmapStore'
+import type { Sheet } from '../../../types/sheet'
 import { MapCard } from './MapCard'
 
 interface Props {

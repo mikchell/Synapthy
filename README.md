@@ -173,10 +173,15 @@ src/
 ├── App.tsx
 ├── main.tsx
 ├── components/
+│   ├── MapThumbnail.tsx       # サムネイル（テンプレート・自分の画像・パステルカラー）。ホームと編集画面で使う
+│   ├── NameInput.tsx          # 名前の入力欄（文字数の表示・切り詰めの通知）
 │   ├── SynapthyIcon.tsx       # ロゴアイコン
 │   └── ThemeToggle.tsx        # ライト/ダーク切替ボタン
 ├── hooks/
 │   └── useIsMobile.ts         # モバイル判定フック
+├── types/
+│   ├── sheet.ts               # Sheet・Folder・MapType（複数の feature と lib から使う型）
+│   └── mindmap.ts             # ノードの型（MindmapNodeData・ImageNodeData・LabelSpan など）
 ├── features/
 │   ├── auth/
 │   │   ├── LoginScreen.tsx    # Google ログイン画面
@@ -194,11 +199,9 @@ src/
 │   │   │   ├── Sidebar.tsx        # 最近・すべて・スター・フォルダ・ゴミ箱ナビ
 │   │   │   ├── MapGrid.tsx        # マップ一覧グリッド（枚数に応じてカードの大きさを変える）
 │   │   │   ├── MapCard.tsx        # マップカード（操作ボタン・ドラッグ）
-│   │   │   ├── MapThumbnail.tsx   # サムネイル（テンプレート・自分の画像・パステルカラー）
 │   │   │   ├── ThumbnailPicker.tsx # サムネイルを選ぶダイアログ
 │   │   │   └── TrashView.tsx      # ゴミ箱一覧（復元・完全削除）
 │   │   └── utils/
-│   │       ├── sheetSelectors.ts     # アクティブ/スター/ゴミ箱の絞り込み
 │   │       └── formatRelativeTime.ts # 相対時刻表示
 │   └── mindmap/
 │       ├── components/
@@ -216,21 +219,26 @@ src/
 │       │   ├── ConfirmDialog.tsx   # 確認ダイアログ
 │       │   └── logicTree.ts        # ロジックツリー描画用の定数
 │       ├── hooks/
-│       │   └── useSheetsSync.ts    # Supabase との同期（変更を検知して保存）
+│       │   ├── useSheetsSync.ts          # Supabase との同期（変更を検知して保存）
+│       │   └── useCurrentSheetLoader.ts  # 開いたシートのノードの中身を、1枚分だけ読み込む
 │       ├── store/
 │       │   └── mindmapStore.ts     # Zustand ストア（全ロジック・整列アルゴリズム）
 │       ├── export/
 │       │   ├── printPdf.ts       # PDF の書き出し（印刷用の表示にして、印刷ダイアログを開く）
 │       │   ├── outline.ts        # Markdown の書き出し（階層を箇条書きにする）
 │       │   └── download.ts       # ファイル名の整形とダウンロード
-│       ├── history.ts        # Undo / Redo
-│       ├── nodeImage.ts      # ノード画像の添付・削除（中心テーマには付けられない）
-│       ├── labelStyle.ts     # 文字の太字・色（一部分の装飾を含む）
-│       └── edgeColor.ts      # 線の色のパレット
+│       └── utils/
+│           ├── history.ts        # Undo / Redo
+│           ├── nodeImage.ts      # ノード画像の添付・削除（中心テーマには付けられない）
+│           ├── labelStyle.ts     # 文字の太字・色（一部分の装飾を含む）
+│           ├── edgeColor.ts      # 線の色のパレット
+│           └── nodeSize.ts       # ノードのサイズ（小・中・大）の定数
 └── lib/
     ├── supabase.ts     # Supabase クライアント初期化
     ├── sheetsApi.ts    # sheets / folders テーブルの CRUD 関数
     ├── imageApi.ts     # node-images ストレージの CRUD 関数
+    ├── sheetRows.ts    # sheets テーブルの行とシートの変換・保存の仕分け
+    ├── sheetSelectors.ts # アクティブ/スター/ゴミ箱の絞り込み
     ├── thumbnailTemplates.ts # サムネイルのテンプレート画像の一覧
     └── theme.ts        # ライト/ダークテーマの状態管理
 

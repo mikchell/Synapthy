@@ -1,10 +1,11 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
 import { imageTooLargeMessage, LIMITS, limitMessage } from './limits'
-import { isSheetLoaded } from './sheetLoad'
+import { isSheetLoaded } from './sheetRows'
 import { fetchSheetsContent } from './sheetsApi'
 import { isTemplatePath } from './thumbnailTemplates'
-import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
+import type { AnyNodeData, ImageNodeData, MindmapNodeData } from '../types/mindmap'
+import type { Sheet } from '../types/sheet'
 
 const BUCKET = 'node-images'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 // 1時間。URLが漏れたときに、使われ続ける期間を短くする

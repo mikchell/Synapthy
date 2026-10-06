@@ -1,4 +1,4 @@
-import type { Sheet } from '../../mindmap/store/mindmapStore'
+import type { Sheet } from '../types/sheet'
 
 export const getActiveSheets = (sheets: Sheet[]): Sheet[] => sheets.filter((s) => !s.deletedAt)
 

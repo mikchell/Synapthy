@@ -2,7 +2,7 @@ import { useReactFlow } from '@xyflow/react'
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
-import type { NodeImage } from '../store/mindmapStore'
+import type { NodeImage } from '../../../types/mindmap'
 
 const MIN_WIDTH = 40
 const MAX_WIDTH = 1600

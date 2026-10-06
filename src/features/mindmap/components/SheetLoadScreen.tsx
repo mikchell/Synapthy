@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { SynapthyIcon } from '../../../components/SynapthyIcon'
 import { useMindmapStore } from '../store/mindmapStore'
-import { useSheetLoadStatus } from '../sheetLoader'
+import { useSheetLoadStatus } from '../hooks/useCurrentSheetLoader'
 
 const textButton: CSSProperties = {
   padding: '10px 18px',

@@ -3,7 +3,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { clearSignedUrlCache } from '../../lib/imageApi'
 import { supabase } from '../../lib/supabase'
-import { resetHistory } from '../mindmap/history'
+import { resetHistory } from '../mindmap/utils/history'
 import { useMindmapStore } from '../mindmap/store/mindmapStore'
 
 const APP_URL = import.meta.env.VITE_APP_URL ?? window.location.origin

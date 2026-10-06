@@ -13,7 +13,7 @@ import {
   getRecentSheets,
   getStarredSheets,
   getTrashedSheets,
-} from '../utils/sheetSelectors'
+} from '../../../lib/sheetSelectors'
 
 type StaticSection = Exclude<HomeSection, 'folder'>
 

@@ -2,9 +2,11 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { AlignJustify, Bold, GripVertical } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
-import { LINE_COLORS, safeLineColor } from '../edgeColor'
-import { displayTextColor, TEXT_COLORS } from '../labelStyle'
-import { type MindmapNodeData, NODE_SIZE_STEPS, useMindmapStore } from '../store/mindmapStore'
+import { LINE_COLORS, safeLineColor } from '../utils/edgeColor'
+import { displayTextColor, TEXT_COLORS } from '../utils/labelStyle'
+import { useMindmapStore } from '../store/mindmapStore'
+import { NODE_SIZE_STEPS } from '../utils/nodeSize'
+import type { MindmapNodeData } from '../../../types/mindmap'
 
 export function NodePanel() {
   const isMobile = useIsMobile()
