@@ -31,6 +31,7 @@ export function useSheetsSync(user: User | null) {
   const edges = useMindmapStore((s) => s.edges)
   const sheets = useMindmapStore((s) => s.sheets)
   const folders = useMindmapStore((s) => s.folders)
+  const ownerId = useMindmapStore((s) => s.ownerId)
 
   const initializedRef = useRef(false)
   const prevSheetIdsRef = useRef<string[]>([])
@@ -41,6 +42,10 @@ export function useSheetsSync(user: User | null) {
   const sheetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const folderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // 保存してよいのは、読み込みが終わっていて、端末のキャッシュの持ち主とログイン中のユーザーが一致しているときだけ
+  // （ログアウトや別の人のログインで状態を初期化したとき、その変化をDBに反映してしまわないための歯止め）
+  const canSync = () => initializedRef.current && !!user && ownerId === user.id
+
   // ログイン時にSupabaseからシート・フォルダを読み込む
   useEffect(() => {
     if (!user) {
@@ -50,8 +55,15 @@ export function useSheetsSync(user: User | null) {
       return
     }
 
+    // 別のユーザーに切り替わったときは、そのユーザーのデータを読み込み終えるまで保存しない
+    initializedRef.current = false
+    const userId = user.id
+
     Promise.all([fetchSheets(), fetchFolders()])
       .then(([fetchedSheets, fetchedFolders]) => {
+        // 読み込み中にログイン中のユーザーが変わっていたら、古い結果は使わない
+        if (useMindmapStore.getState().ownerId !== userId) return
+
         if (fetchedSheets.length > 0) {
           loadSheets(fetchedSheets)
           // サーバーから読み込んだ内容を「元に戻す」の起点にする（読み込み前の状態には戻さない）
@@ -89,7 +101,7 @@ export function useSheetsSync(user: User | null) {
 
   // ノード・エッジ変更時：現在のシートをDebounce保存
   useEffect(() => {
-    if (!initializedRef.current) return
+    if (!canSync()) return
 
     const { sheets: s, currentSheetId } = useMindmapStore.getState()
     const currentSheet = s.find((sh) => sh.id === currentSheetId)
@@ -114,7 +126,7 @@ export function useSheetsSync(user: User | null) {
   // シートの追加・削除・名前/スター/ゴミ箱/最終使用日時/フォルダの変更を検知してDBに反映
   const sheetKey = sheets.map((s) => `${s.id}:${metaKeyOf(s)}`).join(',')
   useEffect(() => {
-    if (!initializedRef.current) return
+    if (!canSync()) return
 
     const { nodes: n, edges: e, currentSheetId } = useMindmapStore.getState()
     const currentIds = sheets.map((s) => s.id)
@@ -177,7 +189,7 @@ export function useSheetsSync(user: User | null) {
   // フォルダの作成・削除・リネームを検知してDBに反映
   const folderKey = folders.map((f) => `${f.id}:${folderKeyOf(f)}`).join(',')
   useEffect(() => {
-    if (!initializedRef.current) return
+    if (!canSync()) return
 
     const currentIds = folders.map((f) => f.id)
     const prevIds = prevFolderIdsRef.current

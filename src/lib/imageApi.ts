@@ -6,6 +6,14 @@ import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../feat
 const BUCKET = 'node-images'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 7 // 7日
 const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024 // 20MB（これを超える貼り付けは処理前に弾く）
+// 圧縮後にアップロードできる最大サイズ・形式。Storage のバケット設定（file_size_limit / allowed_mime_types）と合わせる
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+const UPLOAD_EXTENSIONS: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+}
 const MAX_UPLOAD_DIM = 1600 // アップロードする画像の最大辺（px）
 const MAX_THUMBNAIL_DIM = 640 // サムネイル画像の最大辺（px）。カードに小さく表示するだけなので小さく保存する
 const UPLOAD_QUALITY = 0.85
@@ -59,7 +67,14 @@ export async function uploadNodeImage(file: File, maxDim = MAX_UPLOAD_DIM): Prom
   if (userError || !userData.user) throw userError ?? new Error('未ログインです')
 
   const uploadFile = await compressForUpload(file, maxDim)
-  const ext = uploadFile.type.split('/')[1] ?? 'png'
+  // 圧縮できずに元のファイルのまま来た場合も、サーバーが受け付ける形式・サイズかここで確かめる
+  const ext = UPLOAD_EXTENSIONS[uploadFile.type]
+  if (!ext) {
+    throw new Error('この画像の形式には対応していません（PNG・JPEG・WebP・GIF）')
+  }
+  if (uploadFile.size > MAX_UPLOAD_BYTES) {
+    throw new Error('画像サイズが大きすぎます（5MBまで）')
+  }
   const path = `${userData.user.id}/${crypto.randomUUID()}.${ext}`
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, uploadFile)

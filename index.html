@@ -10,15 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Synaptique</title>
-    <!-- 画面を描く前にテーマを決めておく（あとから切り替わると一瞬明るく光るため）。src/lib/theme.ts と同じ判定 -->
-    <script>
-      (function () {
-        var saved = null
-        try { saved = localStorage.getItem('synaptique-theme') } catch (e) {}
-        var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-      })()
-    </script>
+    <!-- 画面を描く前にテーマを決めておく（あとから切り替わると一瞬明るく光るため）。判定の中身は public/theme-init.js -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
