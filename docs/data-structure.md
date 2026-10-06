@@ -66,6 +66,7 @@ interface Sheet {
   mapType?: MapType                // 'linear' | 'free'（省略時は 'linear' とみなす）
   nodes: Node<AnyNodeData>[]       // @xyflow/react の Node 型
   edges: Edge[]                    // @xyflow/react の Edge 型
+  lineColor?: string | null        // このシートの線の色（edgeColor.ts の LINE_COLORS のいずれか）。未設定は null（テーマの色）。sheets.data の JSONB に保存
   thumbnailPath?: string | null    // ホームのカードのサムネイル画像の Storage パス。未設定は null（シートIDから決めるパステルカラーを表示）。`template:<id>` は同梱のテンプレート画像（`public/thumbnails/`、Storage には保存しない）。sheets.data の JSONB に保存
   isStarred: boolean               // スター（お気に入り）
   deletedAt: string | null         // ゴミ箱に入れた日時。null なら未削除

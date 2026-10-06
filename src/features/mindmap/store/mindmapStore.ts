@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { safeLineColor } from '../edgeColor'
 import { remapSpans, safeTextColor, type LabelSpan } from '../labelStyle'
 
 export type NodeColor = 'purple' | 'blue' | 'cyan' | 'green' | 'pink' | 'orange'
@@ -59,6 +60,8 @@ export interface Sheet {
   edges: Edge[]
   // ホームのカードに表示する画像のストレージ上のパス。未設定ならシートごとのパステルカラー
   thumbnailPath?: string | null
+  // このシートの線の色（edgeColor.ts のパレットのいずれか）。未設定ならテーマの色
+  lineColor?: string | null
   isStarred: boolean
   deletedAt: string | null
   lastOpenedAt: string
@@ -124,6 +127,7 @@ interface MindmapStore {
   touchSheetUpdatedAt: (id: string) => void
   renameSheet: (id: string, name: string) => void
   setSheetThumbnail: (id: string, path: string | null) => void
+  setSheetLineColor: (id: string, color: string | null) => void
   switchSheet: (id: string) => void
   loadSheets: (sheets: Sheet[]) => void
   moveSheetToFolder: (sheetId: string, folderId: string | null) => void
@@ -1017,6 +1021,13 @@ export const useMindmapStore = create<MindmapStore>()(
       setSheetThumbnail: (id, path) => {
         set({
           sheets: get().sheets.map((s) => (s.id === id ? { ...s, thumbnailPath: path } : s)),
+        })
+      },
+
+      setSheetLineColor: (id, color) => {
+        const safe = safeLineColor(color) ?? null
+        set({
+          sheets: get().sheets.map((s) => (s.id === id ? { ...s, lineColor: safe } : s)),
         })
       },
 

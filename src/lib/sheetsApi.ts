@@ -7,7 +7,7 @@ interface DbSheetMeta {
 }
 
 interface DbSheet extends DbSheetMeta {
-  data: { nodes: Sheet['nodes']; edges: Sheet['edges']; mapType?: Sheet['mapType']; thumbnailPath?: string | null }
+  data: { nodes: Sheet['nodes']; edges: Sheet['edges']; mapType?: Sheet['mapType']; thumbnailPath?: string | null; lineColor?: string | null }
   is_starred: boolean
   deleted_at: string | null
   last_opened_at: string
@@ -55,6 +55,7 @@ export async function fetchSheets(): Promise<Sheet[]> {
     name: s.name,
     mapType: s.data?.mapType,
     thumbnailPath: s.data?.thumbnailPath ?? null,
+    lineColor: s.data?.lineColor ?? null,
     nodes: s.data?.nodes ?? [],
     edges: s.data?.edges ?? [],
     isStarred: s.is_starred,
@@ -71,7 +72,7 @@ export async function upsertSheet(sheet: Sheet): Promise<void> {
     {
       id: sheet.id,
       name: sheet.name,
-      data: { mapType: sheet.mapType, nodes: sheet.nodes, edges: sheet.edges, thumbnailPath: sheet.thumbnailPath ?? null },
+      data: { mapType: sheet.mapType, nodes: sheet.nodes, edges: sheet.edges, thumbnailPath: sheet.thumbnailPath ?? null, lineColor: sheet.lineColor ?? null },
       is_starred: sheet.isStarred,
       deleted_at: sheet.deletedAt,
       last_opened_at: sheet.lastOpenedAt,
