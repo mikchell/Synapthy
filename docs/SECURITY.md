@@ -5,6 +5,7 @@
 - **Google OAuth（Supabase Auth）** — `src/features/auth/useAuth.ts` の `signInWithGoogle()` で `supabase.auth.signInWithOAuth({ provider: 'google' })` を呼び出す。他の認証方法は提供していない。
 - OAuth のフローは **PKCE**（`src/lib/supabase.ts` の `auth: { flowType: 'pkce' }`）。ログイン後のリダイレクトでアクセストークンをURLに載せず、認可コードだけを受け取ってブラウザ内で交換する。
 - セッションは Supabase クライアント（`src/lib/supabase.ts`）が管理し、`onAuthStateChange` で状態変化をフックする。
+- ガイドツアーの完了フラグは、Supabase のユーザー情報（`user_metadata.tutorialCompleted`）に `supabase.auth.updateUser` で保存する（`src/features/tutorial/tutorialStore.ts`）。`user_metadata` はユーザー自身が書き換えられるため、権限や課金などの判断には使わない（表示を出し分けるだけの値に限る）
 
 ### 端末に残るキャッシュの持ち主
 

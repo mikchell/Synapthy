@@ -2,10 +2,10 @@
 
 ## サムネイルのテンプレート画像（`public/thumbnails/`）
 
-ホームのカードのサムネイルに選べる画像です。[Unsplash](https://unsplash.com/) の画像を、長辺 640px・JPEG に縮小して同梱しています。
+ホームのカードのサムネイルに選べる画像です。[Unsplash](https://unsplash.com/) の画像を、長辺 1280px・JPEG（品質 78）に縮小して同梱しています。ホームのカードは最大 480px 幅で表示され、高解像度の画面では約 960px 分の画素が必要なため、粗く見えない大きさにしています。
 
 - ライセンス: [Unsplash License](https://unsplash.com/license)（商用利用可・帰属表示は不要。ただし画像そのものを主たる価値とする再配布・販売は不可）
-- 取得元: `https://images.unsplash.com/photo-<元画像ID>`（撮影者名はファイルの取得時に記録していないため、出典は元画像IDのみ）
+- 取得元: `https://images.unsplash.com/photo-<元画像ID>`（`?w=1280&q=78&fm=jpg&fit=max` を付けると、この大きさで取得できる。縦長の画像は `w=853`）（撮影者名はファイルの取得時に記録していないため、出典は元画像IDのみ）
 - 画像の読み込みは同梱ファイルのみ。外部サイトの URL は参照しない
 
 | ファイル | 内容 | 元画像ID |
@@ -95,8 +95,16 @@ NASA の画像は、原則として米国政府の著作物でパブリックド
 | `saturn.jpg` | 土星（カッシーニ） | NASA / JPL / Space Science Institute | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Saturn_during_Equinox.jpg) |
 | `jupiter.jpg` | 木星（ボイジャー1号） | NASA / Caltech / JPL | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Jupiter_from_Voyager_1.jpg) |
 
+## ライセンスの確認状況
+
+- **Wikimedia Commons の44点**（名画・水彩画・日本美術・宇宙）: 2026年10月6日に、Commons の API（`extmetadata` の `LicenseShortName` と `Copyrighted`）で、表示を再確認した。結果は、41点が Public domain、3点（`sargent-campo-frari`、`signac-la-rochelle`、`kanbara-snow`）が CC0 で、取得時の記録と一致している。CC0 の3点は、所蔵する美術館が権利放棄（CC0）で公開している複製写真
+- **Unsplash の12点**: Unsplash License で、商用利用も無料で、帰属表示は不要。ただし CC0 ではなく、「Unsplash の画像を集めて、似たサービスや競合するサービスを作る」ことは認められていない。サムネイルの選択肢として使う範囲は、この条件に当たらないと考えているが、利用の範囲を広げるときは見直す
+- **Unsplash の撮影者名は未記録**: 画像ファイルにはメタデータがなく、Unsplash のページは自動で取得できなかった（ボット対策）。特定したいときは、Unsplash のサイトで画像を検索するか、Unsplash の API（アクセスキーが必要）で調べる
+- **NASA / ESA の画像**: NASA が制作したものはパブリックドメイン。ただし、ESA が配布している版には、クレジットの表示が必要なライセンス（CC BY 4.0）のものがある。ここで使っているのは Commons の「Public domain」の版だが、画像を画面に大きく出す用途を足すときは、クレジット（`NASA, ESA, STScI` など）も一緒に表示する
+- 作品の追加・差し替えのときは、取得時に Commons でライセンス表示を確認し、この表に出典を追記する
+
 ## テンプレートを追加するには
 
-1. 画像を長辺 640px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
+1. 画像を長辺 1280px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
 2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'watercolor'`、`'japan'`、`'space'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
 3. この表に出典を追記する
