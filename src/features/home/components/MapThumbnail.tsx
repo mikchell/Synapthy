@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { getNodeImageSignedUrl } from '../../../lib/imageApi'
+import { useEffect, useRef, useState } from 'react'
+import { getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
 import { findTemplate, isTemplatePath } from '../../../lib/thumbnailTemplates'
 
 interface Props {
@@ -37,6 +37,20 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
     return () => { cancelled = true }
   }, [thumbnailPath])
 
+  // 画像を表示できなかったとき（URLの期限切れなど）は、URLを作り直して、1回だけ再試行する
+  const retriedPathRef = useRef<string | null>(null)
+  const handleImageError = () => {
+    if (!thumbnailPath || isTemplatePath(thumbnailPath)) return
+    if (retriedPathRef.current === thumbnailPath) {
+      setFailedPath(thumbnailPath)
+      return
+    }
+    retriedPathRef.current = thumbnailPath
+    refreshSignedUrl(thumbnailPath)
+      .then((url) => setLoaded({ path: thumbnailPath, url }))
+      .catch(() => setFailedPath(thumbnailPath))
+  }
+
   // 取得中・取得に失敗したときは、パステルカラーのままにしておく
   const url = templateSrc ?? (thumbnailPath && !isTemplatePath(thumbnailPath) && loaded?.path === thumbnailPath && failedPath !== thumbnailPath ? loaded.url : null)
 
@@ -47,7 +61,7 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
           src={url}
           alt=""
           draggable={false}
-          onError={() => setFailedPath(thumbnailPath ?? null)}
+          onError={handleImageError}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: template?.position, display: 'block' }}
         />
       )}

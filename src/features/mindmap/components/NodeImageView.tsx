@@ -1,7 +1,7 @@
 import { useReactFlow } from '@xyflow/react'
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { getNodeImageSignedUrl } from '../../../lib/imageApi'
+import { getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
 import type { NodeImage } from '../store/mindmapStore'
 
 const MIN_WIDTH = 40
@@ -34,6 +34,19 @@ export function NodeImageView({ image, hasText, showControls, onRemove, onResize
       .catch(() => { if (!cancelled) setFailed(true) })
     return () => { cancelled = true }
   }, [image.path])
+
+  // 画像を表示できなかったとき（URLの期限切れなど）は、URLを作り直して、1回だけ再試行する
+  const retriedPathRef = useRef<string | null>(null)
+  const handleImageError = () => {
+    if (retriedPathRef.current === image.path) {
+      setFailed(true)
+      return
+    }
+    retriedPathRef.current = image.path
+    refreshSignedUrl(image.path)
+      .then((signedUrl) => setUrl(signedUrl))
+      .catch(() => setFailed(true))
+  }
 
   const aspect = image.height / image.width
 
@@ -87,6 +100,7 @@ export function NodeImageView({ image, hasText, showControls, onRemove, onResize
           src={url}
           alt=""
           draggable={false}
+          onError={handleImageError}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 8, pointerEvents: 'none' }}
         />
       )}
