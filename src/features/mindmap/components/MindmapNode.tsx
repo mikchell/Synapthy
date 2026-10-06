@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
 import { safeLineColor } from '../edgeColor'
-import { remapSpans, safeTextColor, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
+import { remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
 import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
@@ -208,43 +208,50 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     setEditing(false)
   }, [draft, draftSpans, id, data.label, data.labelStyles, commitNodeLabel])
 
-  // 入力欄で選んでいる範囲に、太字・色を付ける（範囲を選んでいないときは文字全体に付ける）
-  // 文字がまだ空のとき（ノードを追加した直後など）は付ける先がないので、ノード全体の太字・色にする
-  // （そのあとに入力する文字がその装飾になる）
-  const applyToSelection = useCallback((
-    apply: (start: number, end: number) => LabelSpan[] | undefined,
-    applyToNode: () => void,
-  ) => {
-    const input = inputRef.current
-    if (!input) return
-    if (draft.length === 0) {
-      applyToNode()
-      return
-    }
-    const start = input.selectionStart ?? 0
-    const end = input.selectionEnd ?? 0
-    if (end > start) setDraftSpans(apply(start, end))
-    else setDraftSpans(apply(0, draft.length))
-  }, [draft.length])
-  const toggleSelectionBold = useCallback(
-    () => applyToSelection(
-      (s, e) => toggleBold(draft, draftSpans, s, e),
-      () => updateNodeTextStyle(id, { bold: !data.bold, textColor: data.textColor }),
-    ),
-    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, data.bold, data.textColor]
-  )
-  const applyColor = useCallback(
-    (color: string | undefined) => applyToSelection(
-      (s, e) => setColor(draft, draftSpans, s, e, color),
-      () => updateNodeTextStyle(id, { bold: data.bold, textColor: color }),
-    ),
-    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, data.bold]
-  )
   // 文字全体が同じ装飾なら、入力欄の文字にもすぐ反映する（一部分だけの装飾は確定後とツールバーのプレビューで確認する）
   const uniformStyle = useMemo(() => {
     const segments = toSegments(draft, draftSpans)
     return segments.length === 1 ? segments[0] : null
   }, [draft, draftSpans])
+  // いま表示している太字・色（右パネルの「文字」と同じ値。一部分だけ装飾が違うときは undefined で「どれも選択なし」）
+  const mixedStyle = uniformStyle === null
+  const activeColor = uniformStyle ? (uniformStyle.color ?? safeTextColor(data.textColor)) : undefined
+  const activeBold = uniformStyle ? (uniformStyle.bold ?? !!data.bold) : false
+
+  // 入力欄で文字を選んでいるときは、その範囲だけに太字・色を付ける
+  // 選んでいないとき（文字が空のときも）は、右パネルの「文字」と同じノード全体の設定にする
+  // （文字の一部分の装飾が残っていると全体の設定が見た目に効かないので、編集中の分は外す）
+  const applyToSelection = useCallback((
+    applyToPart: (start: number, end: number) => LabelSpan[] | undefined,
+    applyToNode: () => LabelSpan[] | undefined,
+  ) => {
+    const input = inputRef.current
+    if (!input) return
+    const start = input.selectionStart ?? 0
+    const end = input.selectionEnd ?? 0
+    if (draft.length > 0 && end > start) setDraftSpans(applyToPart(start, end))
+    else setDraftSpans(applyToNode())
+  }, [draft.length])
+  const toggleSelectionBold = useCallback(
+    () => applyToSelection(
+      (s, e) => toggleBold(draft, draftSpans, s, e),
+      () => {
+        updateNodeTextStyle(id, { bold: !activeBold, textColor: data.textColor })
+        return setBold(draft, draftSpans, 0, draft.length, false)
+      },
+    ),
+    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, activeBold, data.textColor]
+  )
+  const applyColor = useCallback(
+    (color: string | undefined) => applyToSelection(
+      (s, e) => setColor(draft, draftSpans, s, e, color),
+      () => {
+        updateNodeTextStyle(id, { bold: data.bold, textColor: color })
+        return setColor(draft, draftSpans, 0, draft.length, undefined)
+      },
+    ),
+    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, data.bold]
+  )
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -551,9 +558,9 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         >
           <button
             type="button"
-            title="太字（選んだ文字に付ける。選んでいなければ全体 / Ctrl+B）"
+            title="太字（文字を選んでいれば選んだ部分、選んでいなければ全体 / Ctrl+B）"
             onClick={toggleSelectionBold}
-            style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--c-hover)', color: 'var(--c-text)', padding: 0 }}
+            style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: activeBold ? 'var(--c-accent-soft)' : 'var(--c-hover)', color: activeBold ? 'var(--c-accent)' : 'var(--c-text)', padding: 0 }}
           >
             <Bold size={14} />
           </button>
@@ -561,16 +568,16 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             <button
               key={c.value}
               type="button"
-              title={`${c.label}（選んだ文字に付ける。選んでいなければ全体）`}
+              title={`${c.label}（文字を選んでいれば選んだ部分、選んでいなければ全体）`}
               onClick={() => applyColor(c.value)}
-              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
+              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: activeColor === c.value ? '0 0 0 2px var(--c-accent)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
             type="button"
-            title="色を元に戻す（選んだ文字。選んでいなければ全体）"
+            title="標準の色（文字を選んでいれば選んだ部分、選んでいなければ全体）"
             onClick={() => applyColor(undefined)}
-            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0 }}
+            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0, boxShadow: !mixedStyle && !activeColor ? '0 0 0 2px var(--c-accent)' : 'none' }}
           />
           {/* 編集中は入力欄で装飾が見えないので、ここに仕上がりを表示する */}
           {draftSpans && draft && (
