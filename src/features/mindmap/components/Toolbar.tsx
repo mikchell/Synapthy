@@ -60,7 +60,8 @@ export function Toolbar() {
       style={{
         position: 'fixed',
         bottom: 32,
-        left: 32,
+        left: 'calc(var(--editor-sidebar-w, 0px) + 32px)',
+        transition: 'left 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
