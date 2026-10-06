@@ -158,6 +158,7 @@ npm run dev
 npm run build     # 型チェック（tsc -b）+ 本番ビルド
 npm run preview   # ビルドしたものをローカルで確認
 npm run lint      # oxlint
+npm run check:csp # vercel.json の CSP の検査（Supabase の許可先が、プロジェクトの URL だけか）
 ```
 
 ---
@@ -232,6 +233,7 @@ src/
 
 public/thumbnails/      # サムネイルのテンプレート画像
 supabase/migrations/    # データベース・ストレージのマイグレーション
+scripts/                # 開発・検査用のスクリプト（check-csp.mjs など）
 docs/                   # 設計・運用のドキュメント
 ```
 
