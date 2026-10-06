@@ -161,6 +161,8 @@ npm run lint      # oxlint
 npm run check:csp # vercel.json の CSP の検査（Supabase の許可先が、プロジェクトの URL だけか）
 ```
 
+PR と `main` への push では、GitHub Actions（`.github/workflows/ci.yml`）が、lint・CSP の検査・ビルドと、本番の依存関係の脆弱性の検査（`npm audit`）を実行します。依存パッケージの更新は、Dependabot が毎週 PR にします。詳細は [SECURITY.md](docs/SECURITY.md#依存パッケージと-ci) を参照してください。
+
 ---
 
 ## プロジェクト構成

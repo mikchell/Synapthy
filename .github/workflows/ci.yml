@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # 毎週月曜 9:00（日本時間）。コードが変わらなくても、新しく見つかった依存パッケージの脆弱性に気づくため
+    - cron: '0 0 * * 1'
+
+# ジョブに渡す権限は、リポジトリの読み取りだけにする
+permissions:
+  contents: read
+
+# 同じブランチで新しく実行したときは、古い実行を止める
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Action は、タグではなくコミットの SHA で固定する（タグは、あとから付け替えられるため）。
+# 更新は Dependabot（.github/dependabot.yml）が、SHA とコメントのバージョンをまとめて更新する
+jobs:
+  check:
+    name: lint / CSP / build
+    # 定期実行（schedule）では、脆弱性の検査（audit）だけを行う
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24 # Vercel の既定に合わせる
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # vercel.json の CSP が、supabase-js の通信先をすべて許可していて、ワイルドカードが無いことを確かめる
+      - run: npm run check:csp
+      - run: npm run build
+
+  audit:
+    name: npm audit（本番の依存関係）
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # package-lock.json だけを見るので、インストールは要らない。開発用の依存関係は、本番に出ないので対象にしない
+      - run: npm audit --omit=dev --audit-level=high
