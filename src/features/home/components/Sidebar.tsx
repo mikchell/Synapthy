@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
-import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
+import { SynapthyIcon, WORDMARK_COLOR } from '../../../components/SynapthyIcon'
 import { resetTutorial, useTutorialStore } from '../../tutorial/tutorialStore'
 import { toast } from 'sonner'
 
@@ -205,7 +205,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px 20px' }}>
-        <SynaptiqueIcon size={36} />
+        <SynapthyIcon size={36} />
         <span
           style={{
             fontSize: 18,
@@ -213,7 +213,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             color: WORDMARK_COLOR,
           }}
         >
-          Synaptique
+          Synapthy
         </span>
       </div>
 

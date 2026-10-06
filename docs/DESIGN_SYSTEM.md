@@ -84,7 +84,7 @@ PDFの書き出しは、ブラウザの印刷機能を使う（`src/features/min
 
 ## アイコン
 
-[Lucide React](https://lucide.dev/) を使用。ロゴ単体は `src/components/SynaptiqueIcon.tsx`。
+[Lucide React](https://lucide.dev/) を使用。ロゴ単体は `src/components/SynapthyIcon.tsx`。
 
 ## 実装上のルール
 

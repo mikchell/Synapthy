@@ -1,10 +1,10 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { SynaptiqueIcon } from '../../components/SynaptiqueIcon'
+import { SynapthyIcon } from '../../components/SynapthyIcon'
 
 // 導入画面を自動で次へ進めるまでの時間
 export const WELCOME_INTRO_MS = 6500
 
-const TITLE = 'Welcome to Synaptique!'
+const TITLE = 'Welcome to Synapthy!'
 
 // 画面のあちこちを漂う、小さなロゴ。毎回同じ配置になるよう、決まった式で散らす
 const FLOATERS = Array.from({ length: 18 }, (_, i) => {
@@ -44,7 +44,7 @@ export function WelcomeIntro({ onNext }: { onNext: () => void }) {
   return (
     <motion.div
       role="button"
-      aria-label="Welcome to Synaptique! クリックで次へ進みます"
+      aria-label="Welcome to Synapthy! クリックで次へ進みます"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -80,7 +80,7 @@ export function WelcomeIntro({ onNext }: { onNext: () => void }) {
           }}
           style={{ position: 'absolute', left: `${f.left}%`, top: `${f.top}%`, opacity: f.opacity }}
         >
-          <SynaptiqueIcon size={f.size} />
+          <SynapthyIcon size={f.size} />
         </motion.div>
       ))}
 
@@ -113,7 +113,7 @@ export function WelcomeIntro({ onNext }: { onNext: () => void }) {
                     rotate: { duration: 1.2, delay: 0.6 + i * 0.18, repeat: loop, repeatDelay: 0.8 },
                   }}
                 >
-                  <SynaptiqueIcon size={ring.size} />
+                  <SynapthyIcon size={ring.size} />
                 </motion.div>
               </div>
             )
@@ -170,7 +170,7 @@ export function WelcomeIntro({ onNext }: { onNext: () => void }) {
             filter: 'drop-shadow(0 12px 24px rgba(124,58,237,0.7))',
           }}
         >
-          <SynaptiqueIcon size={140} />
+          <SynapthyIcon size={140} />
         </motion.div>
       </div>
 

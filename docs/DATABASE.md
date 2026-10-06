@@ -1,6 +1,6 @@
 # データベース（Supabase）
 
-Synaptique は Supabase（PostgreSQL + Auth + Storage）をバックエンドに使用しています。マイグレーションは `supabase/migrations/` に時系列で格納されています。
+Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに使用しています。マイグレーションは `supabase/migrations/` に時系列で格納されています。
 
 ## テーブル
 
