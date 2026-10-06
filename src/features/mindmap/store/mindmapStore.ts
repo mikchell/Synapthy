@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
 import { safeLineColor } from '../edgeColor'
 import { remapSpans, safeTextColor, type LabelSpan } from '../labelStyle'
 
@@ -957,6 +958,8 @@ export const useMindmapStore = create<MindmapStore>()(
           mapType: 'linear',
           nodes: initialNodes,
           edges: [],
+          // 新規作成したシートのサムネイルは、用意したテンプレートからランダムに設定する
+          thumbnailPath: randomTemplatePath(),
           isStarred: false,
           deletedAt: null,
           lastOpenedAt: now,

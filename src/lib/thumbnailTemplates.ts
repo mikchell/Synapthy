@@ -53,6 +53,10 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
 
 export const toTemplatePath = (id: string) => `${PREFIX}${id}`
 
+// 用意したテンプレートからランダムに1つ選び、thumbnailPath に保存する形で返す（新規作成したシートの初期サムネイル用）
+export const randomTemplatePath = (): string =>
+  toTemplatePath(THUMBNAIL_TEMPLATES[Math.floor(Math.random() * THUMBNAIL_TEMPLATES.length)].id)
+
 // thumbnailPath がテンプレートを指しているか（Storage 上のファイルではないので、削除や署名付きURLの取得は不要）
 export const isTemplatePath = (path: string | null | undefined): path is string =>
   typeof path === 'string' && path.startsWith(PREFIX)
