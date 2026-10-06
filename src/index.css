@@ -153,3 +153,51 @@ body {
 button, input, textarea, select {
   font-family: inherit;
 }
+
+/* PDFの書き出し：マインドマップだけを、用紙1枚に刷る
+   printPdf.ts が、印刷の直前に body へ print-map を付け、刷れる範囲の大きさを --print-w / --print-h に入れる */
+@media print {
+  body.print-map {
+    margin: 0;
+    width: var(--print-w);
+    height: var(--print-h);
+    overflow: hidden;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* マップ以外（ヘッダー・ツールバー・サイドバー・ガイドツアー・トーストなど）を、すべて隠す */
+  body.print-map * {
+    visibility: hidden;
+  }
+
+  body.print-map .react-flow,
+  body.print-map .react-flow * {
+    visibility: visible;
+  }
+
+  /* React Flow が position や大きさを、要素に直接書き込んでいるので、!important で上書きする */
+  body.print-map .react-flow {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: var(--print-w) !important;
+    height: var(--print-h) !important;
+  }
+
+  /* ぼかした影は、ビューアによっては灰色の四角に描かれてしまうので、印刷では消す */
+  body.print-map .react-flow__node,
+  body.print-map .react-flow__node * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* 紙には要らない、操作用の部品と背景のドット */
+  body.print-map .react-flow__background,
+  body.print-map .react-flow__minimap,
+  body.print-map .react-flow__panel,
+  body.print-map .react-flow__controls {
+    display: none;
+  }
+}
