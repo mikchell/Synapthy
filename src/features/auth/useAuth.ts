@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
+import { clearSignedUrlCache } from '../../lib/imageApi'
 import { supabase } from '../../lib/supabase'
 import { resetHistory } from '../mindmap/history'
 import { useMindmapStore } from '../mindmap/store/mindmapStore'
@@ -13,7 +14,10 @@ const LEGACY_STORAGE_KEY = 'ore-no-mindmap-storage'
 // 別の人でログインした・ログアウトした・セッションが切れたときは、前の人のデータを捨てる
 // （共有端末で、前の人のマインドマップが次の人のアカウントに保存されるのを防ぐため）
 function syncCacheOwner(userId: string | null) {
-  if (useMindmapStore.getState().claimOwnership(userId)) resetHistory()
+  if (useMindmapStore.getState().claimOwnership(userId)) {
+    resetHistory()
+    clearSignedUrlCache()
+  }
 }
 
 export function useAuth() {

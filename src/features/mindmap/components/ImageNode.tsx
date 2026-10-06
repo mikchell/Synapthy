@@ -3,7 +3,7 @@ import { Loader2, RotateCw, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIsMobile } from '../../../hooks/useIsMobile'
-import { deleteNodeImage, getNodeImageSignedUrl } from '../../../lib/imageApi'
+import { deleteNodeImage, getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
 import { type ImageNodeData, useMindmapStore } from '../store/mindmapStore'
 
 const MIN_SIZE = 60
@@ -33,6 +33,19 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
       .catch(() => { if (!cancelled) setFailed(true) })
     return () => { cancelled = true }
   }, [data.path])
+
+  // 画像を表示できなかったとき（URLの期限切れなど）は、URLを作り直して、1回だけ再試行する
+  const retriedPathRef = useRef<string | null>(null)
+  const handleImageError = () => {
+    if (retriedPathRef.current === data.path) {
+      setFailed(true)
+      return
+    }
+    retriedPathRef.current = data.path
+    refreshSignedUrl(data.path)
+      .then((signedUrl) => setUrl(signedUrl))
+      .catch(() => setFailed(true))
+  }
 
   const handleDelete = () => {
     deleteNode(id)
@@ -118,6 +131,7 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
             src={url}
             alt="貼り付けた画像"
             draggable={false}
+            onError={handleImageError}
             style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
           />
         )}

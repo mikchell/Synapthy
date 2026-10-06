@@ -7,7 +7,11 @@ import { isTemplatePath } from './thumbnailTemplates'
 import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
 
 const BUCKET = 'node-images'
-const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 7 // 7日
+const SIGNED_URL_EXPIRES_IN = 60 * 60 // 1時間。URLが漏れたときに、使われ続ける期間を短くする
+// 発行した署名付きURLを使い回す期間。有効期間より短くして、渡したURLに十分な残り時間があるようにする
+const SIGNED_URL_REUSE_MS = 50 * 60 * 1000
+// 同じ画像のURLを作り直す間隔の下限。作り直しても表示できなかった画像（存在しない、など）に、再表示のたびに作り直しを繰り返さない
+const SIGNED_URL_REFRESH_INTERVAL_MS = 60 * 1000
 const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024 // 20MB（これを超える貼り付けは処理前に弾く）
 // 圧縮後にアップロードできる最大サイズ・形式。Storage のバケット設定（file_size_limit / allowed_mime_types）と合わせる
 const MAX_UPLOAD_BYTES = LIMITS.imageBytes
@@ -114,13 +118,48 @@ export async function processAndUploadImage(
   }
 }
 
-// 表示用の署名付きURLを取得（非公開バケットのため毎回発行する）
-export async function getNodeImageSignedUrl(path: string): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(path, SIGNED_URL_EXPIRES_IN)
-  if (error) throw error
-  return data.signedUrl
+const signedUrlCache = new Map<string, { url: string; reuseUntil: number }>()
+const signedUrlInflight = new Map<string, Promise<string>>()
+const signedUrlRefreshedAt = new Map<string, number>()
+
+// 表示用の署名付きURLを取得する（非公開バケットのため、署名付きURLが要る）
+// 表示のたびに新しいURLを発行すると、URLが毎回変わってブラウザのキャッシュが効かず、画像を毎回ダウンロードし直してしまう
+// （ホームを開くたびに、サムネイルを全部取得し直す）。そのため、有効期間の間は同じURLを使い回し、
+// 同じ画像を同時に求められたときは、発行を1回にまとめる。失敗した結果は覚えない
+export function getNodeImageSignedUrl(path: string): Promise<string> {
+  const cached = signedUrlCache.get(path)
+  if (cached && cached.reuseUntil > Date.now()) return Promise.resolve(cached.url)
+  const inflight = signedUrlInflight.get(path)
+  if (inflight) return inflight
+
+  const request = (async () => {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, SIGNED_URL_EXPIRES_IN)
+    if (error) throw error
+    signedUrlCache.set(path, { url: data.signedUrl, reuseUntil: Date.now() + SIGNED_URL_REUSE_MS })
+    return data.signedUrl
+  })().finally(() => signedUrlInflight.delete(path))
+  signedUrlInflight.set(path, request)
+  return request
+}
+
+// 覚えているURLを捨てて、新しく発行する（URLの期限が切れて、画像を表示できなかったときの再試行用）
+// 同じ画像を、直前（1分以内）に作り直していたら、断る（作り直しても表示できなかった、ということなので）
+export function refreshSignedUrl(path: string): Promise<string> {
+  const last = signedUrlRefreshedAt.get(path)
+  if (last !== undefined && Date.now() - last < SIGNED_URL_REFRESH_INTERVAL_MS) {
+    return Promise.reject(new Error('署名付きURLは、直前に作り直したばかりです'))
+  }
+  signedUrlRefreshedAt.set(path, Date.now())
+  signedUrlCache.delete(path)
+  return getNodeImageSignedUrl(path)
+}
+
+// 別の人がログインしたときなどに、覚えているURLをすべて捨てる
+export function clearSignedUrlCache() {
+  signedUrlCache.clear()
+  signedUrlRefreshedAt.clear()
 }
 
 export async function deleteNodeImage(path: string): Promise<void> {
@@ -128,6 +167,8 @@ export async function deleteNodeImage(path: string): Promise<void> {
   if (isTemplatePath(path)) return
   const { error } = await supabase.storage.from(BUCKET).remove([path])
   if (error) throw error
+  signedUrlCache.delete(path)
+  signedUrlRefreshedAt.delete(path)
 }
 
 // 複数の画像をまとめて削除（シートの完全削除・リセット時の孤立ファイル掃除用）
@@ -136,6 +177,10 @@ export async function deleteNodeImages(paths: string[]): Promise<void> {
   if (storagePaths.length === 0) return
   const { error } = await supabase.storage.from(BUCKET).remove(storagePaths)
   if (error) throw error
+  storagePaths.forEach((p) => {
+    signedUrlCache.delete(p)
+    signedUrlRefreshedAt.delete(p)
+  })
 }
 
 // ノード配列が参照しているストレージパスを抽出する
