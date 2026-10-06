@@ -330,7 +330,10 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               // 文字だけのノード：選択時だけ角丸の枠、ホバー時はごく薄い背景
               borderRadius: 10,
               background: hovered && !selected ? 'var(--c-hover)' : 'transparent',
-              border: data.showBorder ? `1.5px solid ${colors.border}` : 'none',
+              // 太さは枠線の太さの設定（未設定は1.5px）。太いときは他のノードと同じく色を濃くする
+              border: data.showBorder
+                ? `${data.borderWidth ?? 1.5}px solid ${data.borderWidth && data.borderWidth > 2 ? colors.border.replace('0.4)', '0.85)') : colors.border}`
+                : 'none',
               boxShadow: selected ? '0 0 0 2px var(--c-select)' : 'none',
               padding: `${Math.round(6 * stepScale)}px ${Math.round(12 * stepScale)}px`,
               whiteSpace: 'nowrap' as const,
