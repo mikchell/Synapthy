@@ -6,6 +6,7 @@ import { useMindmapStore, type Sheet } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { deleteNodeImage, deleteNodeImages, getSheetImagePaths, uploadThumbnailImage } from '../../../lib/imageApi'
+import { LIMITS } from '../../../lib/limits'
 import { toTemplatePath } from '../../../lib/thumbnailTemplates'
 import { MapThumbnail } from './MapThumbnail'
 import { ThumbnailPicker } from './ThumbnailPicker'
@@ -171,6 +172,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
             <input
               ref={inputRef}
               value={draft}
+              maxLength={LIMITS.nameLength}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commitRename}
               onKeyDown={(e) => {

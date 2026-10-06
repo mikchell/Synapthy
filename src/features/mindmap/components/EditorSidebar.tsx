@@ -6,6 +6,7 @@ import { useMindmapStore, type Sheet } from '../store/mindmapStore'
 import { getActiveSheets } from '../../home/utils/sheetSelectors'
 import { MapThumbnail } from '../../home/components/MapThumbnail'
 import { useAuth } from '../../auth/useAuth'
+import { notifyLimit } from '../../../lib/limits'
 import { useTheme } from '../../../lib/theme'
 import { useTutorialStore } from '../../tutorial/tutorialStore'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -314,7 +315,10 @@ function EditorSidebarView({ open, onOpenChange, isMobile, onRequestLogout }: Pr
   }
 
   const handleAdd = () => {
-    addSheet()
+    if (!addSheet()) {
+      notifyLimit('sheets')
+      return
+    }
     if (isMobile) onOpenChange(false)
   }
 

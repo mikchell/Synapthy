@@ -2,6 +2,7 @@ import { Clock, Folder as FolderIcon, HelpCircle, LayoutGrid, LogOut, Pencil, Pl
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
+import { LIMITS, notifyLimit } from '../../../lib/limits'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { SynapthyIcon, WORDMARK_COLOR } from '../../../components/SynapthyIcon'
@@ -104,6 +105,7 @@ function FolderRow({
           <input
             ref={inputRef}
             value={draft}
+            maxLength={LIMITS.nameLength}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -186,7 +188,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
 
   const commitNewFolder = () => {
     const trimmed = newFolderName.trim()
-    if (trimmed) createFolder(trimmed)
+    if (trimmed && !createFolder(trimmed)) notifyLimit('folders')
     setNewFolderName('')
     setAddingFolder(false)
   }
@@ -265,6 +267,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             <input
               ref={newFolderInputRef}
               value={newFolderName}
+              maxLength={LIMITS.nameLength}
               onChange={(e) => setNewFolderName(e.target.value)}
               onBlur={commitNewFolder}
               onKeyDown={(e) => {

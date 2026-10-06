@@ -12,6 +12,7 @@ import {
   upsertFoldersBatch,
   deleteFolderFromDb,
 } from '../../../lib/sheetsApi'
+import { limitKindOf, notifyLimit } from '../../../lib/limits'
 
 const NODE_DEBOUNCE_MS = 1000   // ノード・エッジ変更の保存間隔
 const SHEET_DEBOUNCE_MS = 2000  // シートメタ変更の保存間隔
@@ -22,6 +23,14 @@ const FOLDER_DEBOUNCE_MS = 1000 // フォルダ変更の保存間隔
 const metaKeyOf = (s: Sheet) =>
   `${s.name}|${s.isStarred}|${s.deletedAt ?? ''}|${s.lastOpenedAt}|${s.folderId ?? ''}|${s.thumbnailPath ?? ''}|${s.lineColor ?? ''}`
 const folderKeyOf = (f: Folder) => f.name
+
+// 保存の失敗を通知する。上限によるものなら、その理由を表示する
+// （同じ理由のトーストは重ならない。デバウンス保存が続けて失敗しても、通知が増え続けない）
+function notifySaveError(error: unknown, fallback: string) {
+  const kind = limitKindOf(error)
+  if (kind) notifyLimit(kind)
+  else toast.error(fallback)
+}
 
 export function useSheetsSync(user: User | null) {
   const loadSheets = useMindmapStore((s) => s.loadSheets)
@@ -78,7 +87,7 @@ export function useSheetsSync(user: User | null) {
           )
           prevSheetIdsRef.current = toSave.map((s) => s.id)
           prevMetaRef.current = Object.fromEntries(toSave.map((s) => [s.id, metaKeyOf(s)]))
-          upsertSheetsBatch(toSave).catch(() => toast.error('シートの保存に失敗しました'))
+          upsertSheetsBatch(toSave).catch((e) => notifySaveError(e, 'シートの保存に失敗しました'))
         }
 
         if (fetchedFolders.length > 0) {
@@ -90,7 +99,7 @@ export function useSheetsSync(user: User | null) {
           prevFolderIdsRef.current = localFolders.map((f) => f.id)
           prevFolderMetaRef.current = Object.fromEntries(localFolders.map((f) => [f.id, folderKeyOf(f)]))
           if (localFolders.length > 0) {
-            upsertFoldersBatch(localFolders).catch(() => toast.error('フォルダの保存に失敗しました'))
+            upsertFoldersBatch(localFolders).catch((e) => notifySaveError(e, 'フォルダの保存に失敗しました'))
           }
         }
 
@@ -115,7 +124,7 @@ export function useSheetsSync(user: User | null) {
           setIsSaving(false)
           useMindmapStore.getState().touchSheetUpdatedAt(currentSheet.id)
         })
-        .catch(() => { setIsSaving(false); toast.error('変更の保存に失敗しました') })
+        .catch((e) => { setIsSaving(false); notifySaveError(e, '変更の保存に失敗しました') })
     }, NODE_DEBOUNCE_MS)
 
     return () => {
@@ -158,7 +167,7 @@ export function useSheetsSync(user: User | null) {
             setIsSaving(false)
             payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))
           })
-          .catch(() => { setIsSaving(false); toast.error('シートの保存に失敗しました') })
+          .catch((e) => { setIsSaving(false); notifySaveError(e, 'シートの保存に失敗しました') })
       }
 
       if (otherChanged.length > 0) {
@@ -173,7 +182,7 @@ export function useSheetsSync(user: User | null) {
               setIsSaving(false)
               payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))
             })
-            .catch(() => { setIsSaving(false); toast.error('シートの保存に失敗しました') })
+            .catch((e) => { setIsSaving(false); notifySaveError(e, 'シートの保存に失敗しました') })
         }, SHEET_DEBOUNCE_MS)
       }
     }
@@ -201,7 +210,7 @@ export function useSheetsSync(user: User | null) {
     if (changed.length > 0) {
       if (folderTimerRef.current) clearTimeout(folderTimerRef.current)
       folderTimerRef.current = setTimeout(() => {
-        upsertFoldersBatch(changed).catch(() => toast.error('フォルダの保存に失敗しました'))
+        upsertFoldersBatch(changed).catch((e) => notifySaveError(e, 'フォルダの保存に失敗しました'))
       }, FOLDER_DEBOUNCE_MS)
     }
 

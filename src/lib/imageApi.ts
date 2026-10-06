@@ -1,5 +1,6 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
+import { imageTooLargeMessage, LIMITS, limitMessage } from './limits'
 import { isTemplatePath } from './thumbnailTemplates'
 import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
 
@@ -7,7 +8,7 @@ const BUCKET = 'node-images'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 7 // 7日
 const MAX_ORIGINAL_BYTES = 20 * 1024 * 1024 // 20MB（これを超える貼り付けは処理前に弾く）
 // 圧縮後にアップロードできる最大サイズ・形式。Storage のバケット設定（file_size_limit / allowed_mime_types）と合わせる
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+const MAX_UPLOAD_BYTES = LIMITS.imageBytes
 const UPLOAD_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
   'image/png': 'png',
@@ -73,12 +74,18 @@ export async function uploadNodeImage(file: File, maxDim = MAX_UPLOAD_DIM): Prom
     throw new Error('この画像の形式には対応していません（PNG・JPEG・WebP・GIF）')
   }
   if (uploadFile.size > MAX_UPLOAD_BYTES) {
-    throw new Error('画像サイズが大きすぎます（5MBまで）')
+    throw new Error(imageTooLargeMessage)
   }
   const path = `${userData.user.id}/${crypto.randomUUID()}.${ext}`
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, uploadFile)
-  if (error) throw error
+  if (error) {
+    // サーバーの制限による拒否は、理由が分かるメッセージにする
+    // （枚数の超過は、ストレージのポリシー違反（RLS）として返ってくる）
+    if (/maximum allowed size/i.test(error.message)) throw new Error(imageTooLargeMessage)
+    if (/row-level security/i.test(error.message)) throw new Error(limitMessage('images'))
+    throw error
+  }
   return path
 }
 

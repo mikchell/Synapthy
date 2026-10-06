@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { clampName, LIMITS } from '../../../lib/limits'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
 import { safeLineColor } from '../edgeColor'
 import { remapSpans, safeTextColor, setBold, setColor, type LabelSpan } from '../labelStyle'
@@ -125,7 +126,8 @@ interface MindmapStore {
   claimOwnership: (userId: string | null) => boolean
 
   setCurrentView: (view: 'home' | 'editor') => void
-  addSheet: () => void
+  // 上限（ごみ箱のシートも数える）に達していて作れなかったときだけ false を返す
+  addSheet: () => boolean
   moveSheetToTrash: (id: string) => void
   restoreSheetFromTrash: (id: string) => void
   permanentlyDeleteSheet: (id: string) => void
@@ -137,7 +139,8 @@ interface MindmapStore {
   switchSheet: (id: string) => void
   loadSheets: (sheets: Sheet[]) => void
   moveSheetToFolder: (sheetId: string, folderId: string | null) => void
-  createFolder: (name: string) => void
+  // 上限に達していて作れなかったときだけ false を返す（名前が空のときは何もせず true）
+  createFolder: (name: string) => boolean
   renameFolder: (id: string, name: string) => void
   deleteFolder: (id: string) => void
   loadFolders: (folders: Folder[]) => void
@@ -981,6 +984,7 @@ export const useMindmapStore = create<MindmapStore>()(
 
       addSheet: () => {
         const { sheets, currentSheetId, nodes, edges } = get()
+        if (sheets.length >= LIMITS.sheets) return false
         const updatedSheets = sheets.map((s) =>
           s.id === currentSheetId ? { ...s, nodes, edges } : s
         )
@@ -1009,6 +1013,7 @@ export const useMindmapStore = create<MindmapStore>()(
           edges: newSheet.edges,
           selectedNodeId: initialNodes[0]?.id ?? null,
         })
+        return true
       },
 
       moveSheetToTrash: (id) => {
@@ -1052,7 +1057,7 @@ export const useMindmapStore = create<MindmapStore>()(
 
       renameSheet: (id, name) => {
         set({
-          sheets: get().sheets.map((s) => (s.id === id ? { ...s, name } : s)),
+          sheets: get().sheets.map((s) => (s.id === id ? { ...s, name: clampName(name) } : s)),
         })
       },
 
@@ -1115,13 +1120,15 @@ export const useMindmapStore = create<MindmapStore>()(
       },
 
       createFolder: (name) => {
-        const trimmed = name.trim()
-        if (!trimmed) return
+        const trimmed = clampName(name.trim())
+        if (!trimmed) return true
+        if (get().folders.length >= LIMITS.folders) return false
         set({ folders: [...get().folders, { id: crypto.randomUUID(), name: trimmed }] })
+        return true
       },
 
       renameFolder: (id, name) => {
-        const trimmed = name.trim()
+        const trimmed = clampName(name.trim())
         if (!trimmed) return
         set({ folders: get().folders.map((f) => (f.id === id ? { ...f, name: trimmed } : f)) })
       },
