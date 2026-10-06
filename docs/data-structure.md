@@ -54,6 +54,7 @@ interface Sheet {
   mapType?: MapType                // 'linear' | 'free'（省略時は 'linear' とみなす）
   nodes: Node<AnyNodeData>[]       // @xyflow/react の Node 型
   edges: Edge[]                    // @xyflow/react の Edge 型
+  thumbnailPath?: string | null    // ホームのカードのサムネイル画像の Storage パス。未設定は null（シートIDから決めるパステルカラーを表示）。sheets.data の JSONB に保存
   isStarred: boolean               // スター（お気に入り）
   deletedAt: string | null         // ゴミ箱に入れた日時。null なら未削除
   lastOpenedAt: string             // 最後に開いた日時（「最近使用した項目」の並び替えに使用）

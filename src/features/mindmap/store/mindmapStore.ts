@@ -52,6 +52,8 @@ export interface Sheet {
   mapType?: MapType
   nodes: Node<AnyNodeData>[]
   edges: Edge[]
+  // ホームのカードに表示する画像のストレージ上のパス。未設定ならシートごとのパステルカラー
+  thumbnailPath?: string | null
   isStarred: boolean
   deletedAt: string | null
   lastOpenedAt: string
@@ -112,6 +114,7 @@ interface MindmapStore {
   toggleSheetStar: (id: string) => void
   touchSheetUpdatedAt: (id: string) => void
   renameSheet: (id: string, name: string) => void
+  setSheetThumbnail: (id: string, path: string | null) => void
   switchSheet: (id: string) => void
   loadSheets: (sheets: Sheet[]) => void
   moveSheetToFolder: (sheetId: string, folderId: string | null) => void
@@ -965,6 +968,12 @@ export const useMindmapStore = create<MindmapStore>()(
       renameSheet: (id, name) => {
         set({
           sheets: get().sheets.map((s) => (s.id === id ? { ...s, name } : s)),
+        })
+      },
+
+      setSheetThumbnail: (id, path) => {
+        set({
+          sheets: get().sheets.map((s) => (s.id === id ? { ...s, thumbnailPath: path } : s)),
         })
       },
 
