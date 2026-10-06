@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
 import { safeLineColor } from '../edgeColor'
-import { remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
+import { rangeStyle, remapSpans, safeTextColor, setBold, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
 import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
@@ -214,9 +214,25 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     return segments.length === 1 ? segments[0] : null
   }, [draft, draftSpans])
   // いま表示している太字・色（右パネルの「文字」と同じ値。一部分だけ装飾が違うときは undefined で「どれも選択なし」）
-  const mixedStyle = uniformStyle === null
-  const activeColor = uniformStyle ? (uniformStyle.color ?? safeTextColor(data.textColor)) : undefined
-  const activeBold = uniformStyle ? (uniformStyle.bold ?? !!data.bold) : false
+  // 入力欄で選んでいる範囲（選んでいなければ文字全体を見る）。ツールバーの丸は、この範囲の色を囲んで表示する
+  const [selRange, setSelRange] = useState<{ start: number; end: number } | null>(null)
+  const range = selRange && selRange.end > selRange.start && draft.length > 0
+    ? { start: selRange.start, end: Math.min(selRange.end, draft.length) }
+    : null
+  const nodeColor = safeTextColor(data.textColor)
+  let activeColor: string | undefined
+  let mixedStyle: boolean
+  let activeBold: boolean
+  if (range) {
+    const r = rangeStyle(draft, draftSpans, range.start, range.end)
+    mixedStyle = r.color === null
+    activeColor = r.color === null ? undefined : (r.color ?? nodeColor)
+    activeBold = r.bold === null ? false : (r.bold || !!data.bold)
+  } else {
+    mixedStyle = uniformStyle === null
+    activeColor = uniformStyle ? (uniformStyle.color ?? nodeColor) : undefined
+    activeBold = uniformStyle ? (uniformStyle.bold ?? !!data.bold) : false
+  }
 
   // 入力欄で文字を選んでいるときは、その範囲だけに太字・色を付ける
   // 選んでいないとき（文字が空のときも）は、右パネルの「文字」と同じノード全体の設定にする
@@ -505,6 +521,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             }}
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
+            onSelect={(e) => setSelRange({ start: e.currentTarget.selectionStart ?? 0, end: e.currentTarget.selectionEnd ?? 0 })}
             style={{
               gridArea: '1 / 1',
               background: 'transparent',
@@ -570,14 +587,14 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               type="button"
               title={`${c.label}（文字を選んでいれば選んだ部分、選んでいなければ全体）`}
               onClick={() => applyColor(c.value)}
-              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: activeColor === c.value ? '0 0 0 2px var(--c-accent)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
+              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: activeColor === c.value ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-accent)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
             type="button"
             title="標準の色（文字を選んでいれば選んだ部分、選んでいなければ全体）"
             onClick={() => applyColor(undefined)}
-            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0, boxShadow: !mixedStyle && !activeColor ? '0 0 0 2px var(--c-accent)' : 'none' }}
+            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0, boxShadow: !mixedStyle && !activeColor ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-accent)' : 'none' }}
           />
           {/* 編集中は入力欄で装飾が見えないので、ここに仕上がりを表示する */}
           {draftSpans && draft && (
