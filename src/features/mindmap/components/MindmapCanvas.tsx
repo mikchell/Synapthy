@@ -17,6 +17,7 @@ import { processAndUploadImage } from '../../../lib/imageApi'
 import { attachImageToNode } from '../nodeImage'
 import { redo, undo } from '../history'
 import { Header } from './Header'
+import { EditorSidebar, EditorSidebarOpenButton, useEditorSidebar } from './EditorSidebar'
 import { MindmapNode } from './MindmapNode'
 import { ImageNode } from './ImageNode'
 import { InteractiveEdge } from './InteractiveEdge'
@@ -60,6 +61,7 @@ function MindmapFlow() {
   // （framer-motion の SVG はスタイルの stroke をマウント時の値で固定してしまい、あとから色を変えても反映されないため）
   const lineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor))
   const isMobile = useIsMobile()
+  const sidebar = useEditorSidebar(isMobile)
   const containerRef = useRef<HTMLDivElement>(null)
   const twoFingerRef = useRef<{ midX: number; midY: number; vx: number; vy: number } | null>(null)
 
@@ -183,7 +185,16 @@ function MindmapFlow() {
   return (
     <div
       ref={containerRef}
-      style={{ width: '100vw', height: '100vh', paddingTop: 56, ...(lineColor ? ({ '--c-sheet-line': displayTextColor(lineColor) } as React.CSSProperties) : {}) }}
+      style={{
+        width: `calc(100vw - ${sidebar.occupiedWidth}px)`,
+        marginLeft: sidebar.occupiedWidth,
+        height: '100vh',
+        paddingTop: 56,
+        transition: 'width 0.2s ease, margin-left 0.2s ease',
+        // ツールバーなど画面に固定した部品が、サイドバーと重ならないように避ける幅
+        '--editor-sidebar-w': `${sidebar.occupiedWidth}px`,
+        ...(lineColor ? ({ '--c-sheet-line': displayTextColor(lineColor) } as React.CSSProperties) : {}),
+      } as React.CSSProperties}
     >
       <ReactFlow
         nodes={nodes}
@@ -226,6 +237,8 @@ function MindmapFlow() {
         )}
       </ReactFlow>
       <Header />
+      <EditorSidebar open={sidebar.open} onOpenChange={sidebar.setOpen} isMobile={isMobile} />
+      {isMobile && !sidebar.open && <EditorSidebarOpenButton onClick={() => sidebar.setOpen(true)} />}
       <Toolbar />
       <NodePanel />
       <HelpHint />
