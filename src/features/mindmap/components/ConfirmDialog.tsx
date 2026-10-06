@@ -54,7 +54,7 @@ export function ConfirmDialog({
             exit={{ opacity: 0, scale: 0.92, y: 8 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
             style={{
-              background: '#ffffff',
+              background: 'var(--c-surface)',
               borderRadius: 20,
               padding: '32px 28px 24px',
               width: 320,
@@ -65,10 +65,10 @@ export function ConfirmDialog({
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>
                 {title}
               </p>
-              <p style={{ margin: 0, fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--c-text-2)', lineHeight: 1.6 }}>
                 {description}
               </p>
             </div>
@@ -79,9 +79,9 @@ export function ConfirmDialog({
                 style={{
                   padding: '8px 16px',
                   borderRadius: 10,
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  background: '#f8fafc',
-                  color: '#64748b',
+                  border: '1px solid var(--c-border)',
+                  background: 'var(--c-bg-subtle)',
+                  color: 'var(--c-text-2)',
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',

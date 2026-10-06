@@ -107,8 +107,8 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
           height: '100%',
           borderRadius: 12,
           overflow: 'hidden',
-          background: '#f1f5f9',
-          border: selected ? '2px solid #7c3aed' : '1px solid rgba(0,0,0,0.08)',
+          background: 'var(--c-bg-subtle)',
+          border: selected ? '2px solid var(--c-accent)' : '1px solid var(--c-border)',
           boxShadow: selected ? '0 0 24px rgba(124,58,237,0.25)' : '0 2px 8px rgba(0,0,0,0.08)',
           transform: rotation ? `rotate(${rotation}deg)` : undefined,
         }}
@@ -124,12 +124,12 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
 
         {!url && !failed && (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Loader2 size={20} color="#94a3b8" style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={20} color="var(--c-text-3)" style={{ animation: 'spin 1s linear infinite' }} />
           </div>
         )}
 
         {failed && (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#94a3b8' }}>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--c-text-3)' }}>
             画像を読み込めませんでした
           </div>
         )}
@@ -145,8 +145,8 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
           style={{
             width: 10, height: 10,
             borderRadius: '50%',
-            background: 'white',
-            border: '2px solid #7c3aed',
+            background: 'var(--c-surface)',
+            border: '2px solid var(--c-accent)',
             boxShadow: '0 1px 4px rgba(124,58,237,0.3)',
           }}
         />
@@ -162,8 +162,8 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
             position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 22, height: 22, borderRadius: '50%',
-            border: '1.5px solid rgba(124,58,237,0.5)', background: '#ffffff',
-            color: '#7c3aed', cursor: 'grab',
+            border: '1.5px solid rgba(124,58,237,0.5)', background: 'var(--c-surface)',
+            color: 'var(--c-accent)', cursor: 'grab',
             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}
         >
@@ -179,7 +179,7 @@ export function ImageNode({ id, data, selected, width, height }: NodeProps<Node<
             position: 'absolute', top: 6, right: 6,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 24, height: 24, borderRadius: '50%',
-            border: 'none', background: 'rgba(255,255,255,0.95)',
+            border: 'none', background: 'var(--c-glass)',
             color: '#ef4444', cursor: 'pointer',
             boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
           }}

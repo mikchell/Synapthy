@@ -1,6 +1,6 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
-import type { AnyNodeData, ImageNodeData } from '../features/mindmap/store/mindmapStore'
+import type { AnyNodeData, ImageNodeData, MindmapNodeData } from '../features/mindmap/store/mindmapStore'
 
 const BUCKET = 'node-images'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 7 // 7日
@@ -103,9 +103,12 @@ export async function deleteNodeImages(paths: string[]): Promise<void> {
   if (error) throw error
 }
 
-// ノード配列から画像ノードが参照しているストレージパスを抽出する
+// ノード配列が参照しているストレージパスを抽出する
+// （ボードに置いた画像ノードと、ノードに付けた画像の両方）
 export function getImagePaths(nodes: Node<AnyNodeData>[]): string[] {
-  return nodes
-    .filter((n): n is Node<ImageNodeData> => n.type === 'imageNode')
-    .map((n) => n.data.path)
+  return nodes.flatMap((n) => {
+    if (n.type === 'imageNode') return [(n.data as ImageNodeData).path]
+    const image = (n.data as MindmapNodeData).image
+    return image ? [image.path] : []
+  })
 }

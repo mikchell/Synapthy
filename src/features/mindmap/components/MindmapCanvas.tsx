@@ -6,6 +6,7 @@ import {
   ReactFlowProvider,
   SelectionMode,
   useReactFlow,
+  type OnBeforeDelete,
 } from '@xyflow/react'
 import { useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
@@ -13,6 +14,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { useMindmapStore } from '../store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { processAndUploadImage } from '../../../lib/imageApi'
+import { attachImageToNode } from '../nodeImage'
+import { redo, undo } from '../history'
 import { Header } from './Header'
 import { MindmapNode } from './MindmapNode'
 import { ImageNode } from './ImageNode'
@@ -65,6 +68,15 @@ function MindmapFlow() {
       if (!file) return
       e.preventDefault()
 
+      // ノードを選択中なら、そのノードに画像を付ける
+      const { selectedNodeId, nodes: currentNodes } = useMindmapStore.getState()
+      const selected = currentNodes.find((n) => n.id === selectedNodeId)
+      if (selected?.type === 'mindmapNode') {
+        attachImageToNode(selected.id, file)
+        return
+      }
+
+      // 何も選択していなければ、ボードの中央に画像として置く
       const position = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
       processAndUploadImage(file)
         .then(({ path, width, height }) => addImageNode(path, width, height, position))
@@ -74,6 +86,37 @@ function MindmapFlow() {
     window.addEventListener('paste', handlePaste)
     return () => window.removeEventListener('paste', handlePaste)
   }, [addImageNode, screenToFlowPosition])
+
+  // Command/Ctrl+Z で元に戻す、Shift+Command/Ctrl+Z（または Ctrl+Y）でやり直す
+  // 文字の入力中は、入力欄そのものの「元に戻す」を優先する
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      const key = e.key.toLowerCase()
+      if (key !== 'z' && key !== 'y') return
+      const el = document.activeElement
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return
+      e.preventDefault()
+      if (key === 'y' || e.shiftKey) redo()
+      else undo()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Delete キーでの削除から中心テーマを外す（中心テーマは削除できない）
+  // 中心テーマにつながる線も、他に消すノードとつながっていなければ残す
+  const handleBeforeDelete = useCallback<OnBeforeDelete>(async ({ nodes: targets, edges: targetEdges }) => {
+    const isRoot = (n: { id: string; data: unknown }) => n.id === 'root' || !!(n.data as { isRoot?: boolean }).isRoot
+    if (!targets.some(isRoot)) return true
+    toast.info('中心テーマは削除できません')
+    const deletable = targets.filter((n) => !isRoot(n))
+    const ids = new Set(deletable.map((n) => n.id))
+    return {
+      nodes: deletable,
+      edges: targetEdges.filter((e) => e.selected || ids.has(e.source) || ids.has(e.target)),
+    }
+  }, [])
 
   const handlePaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId])
 
@@ -137,6 +180,7 @@ function MindmapFlow() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onBeforeDelete={handleBeforeDelete}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -163,12 +207,12 @@ function MindmapFlow() {
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1.5}
-          color="rgba(148, 163, 184, 0.6)"
+          color="var(--c-dot)"
         />
         {!isMobile && (
           <MiniMap
             nodeColor={getMinimapNodeColor}
-            maskColor="rgba(124,58,237,0.06)"
+            maskColor="var(--c-accent-soft)"
             style={{ bottom: 32, right: 32 }}
           />
         )}

@@ -17,7 +17,7 @@ export function MapGrid({ sheets, viewMode, variant, emptyMessage }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
           height: 200,
-          color: '#94a3b8',
+          color: 'var(--c-text-3)',
           fontSize: 13,
         }}
       >
