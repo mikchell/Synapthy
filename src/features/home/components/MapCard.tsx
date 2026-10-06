@@ -138,6 +138,9 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
             // リスト表示は固定の高さ。グリッド表示はカードの幅に比例させる（シートが少なくカードが大きいときは、サムネイルも大きくなる）
             ...(isList ? { height: 72 } : { aspectRatio: '16 / 10' }),
             flexShrink: 0,
+            // 中の画像の大きさに枠が引き伸ばされないようにする（MapThumbnail は絶対配置で枠いっぱいに広がる）
+            position: 'relative',
+            overflow: 'hidden',
             background: 'var(--c-bg-subtle)',
             borderRight: isList ? '1px solid var(--c-border)' : 'none',
             borderBottom: isList ? 'none' : '1px solid var(--c-border)',
