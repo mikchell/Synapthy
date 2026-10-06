@@ -712,13 +712,16 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
                 <Trash2 size={11} />
               </button>
             )}
-            <button
-              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
-              title={data.image ? '画像を変更' : '画像を追加'}
-              style={{ ...ADD_BTN, position: 'static' }}
-            >
-              <ImagePlus size={12} />
-            </button>
+            {/* 中心テーマには画像を追加できない */}
+            {!data.isRoot && (
+              <button
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+                title={data.image ? '画像を変更' : '画像を追加'}
+                style={{ ...ADD_BTN, position: 'static' }}
+              >
+                <ImagePlus size={12} />
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

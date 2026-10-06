@@ -14,7 +14,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useMindmapStore } from '../store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { processAndUploadImage } from '../../../lib/imageApi'
-import { attachImageToNode } from '../nodeImage'
+import { attachImageToNode, isRootNode } from '../nodeImage'
 import { redo, undo } from '../history'
 import { Header } from './Header'
 import { EditorSidebar, EditorSidebarOpenButton, useEditorSidebar } from './EditorSidebar'
@@ -79,6 +79,7 @@ function MindmapFlow() {
       const { selectedNodeId, nodes: currentNodes } = useMindmapStore.getState()
       const selected = currentNodes.find((n) => n.id === selectedNodeId)
       if (selected?.type === 'mindmapNode') {
+        // 中心テーマには付けられないので、attachImageToNode がメッセージを出して何もしない
         attachImageToNode(selected.id, file)
         return
       }
@@ -114,7 +115,7 @@ function MindmapFlow() {
   // Delete キーでの削除から中心テーマを外す（中心テーマは削除できない）
   // 中心テーマにつながる線も、他に消すノードとつながっていなければ残す
   const handleBeforeDelete = useCallback<OnBeforeDelete>(async ({ nodes: targets, edges: targetEdges }) => {
-    const isRoot = (n: { id: string; data: unknown }) => n.id === 'root' || !!(n.data as { isRoot?: boolean }).isRoot
+    const isRoot = isRootNode
     if (!targets.some(isRoot)) return true
     toast.info('中心テーマは削除できません')
     const deletable = targets.filter((n) => !isRoot(n))
