@@ -204,19 +204,24 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     setEditing(false)
   }, [draft, draftSpans, id, data.label, data.labelStyles, commitNodeLabel])
 
-  // 入力欄で選んでいる範囲に、太字・色を付ける（範囲を選んでいないときは何もしない）
+  // 入力欄で選んでいる範囲に、太字・色を付ける（範囲を選んでいないときは文字全体に付ける）
   const applyToSelection = useCallback((apply: (start: number, end: number) => LabelSpan[] | undefined) => {
     const input = inputRef.current
     if (!input) return
     const start = input.selectionStart ?? 0
     const end = input.selectionEnd ?? 0
-    if (end <= start) return
-    setDraftSpans(apply(start, end))
-  }, [])
+    if (end > start) setDraftSpans(apply(start, end))
+    else setDraftSpans(apply(0, draft.length))
+  }, [draft.length])
   const toggleSelectionBold = useCallback(
     () => applyToSelection((s, e) => toggleBold(draft, draftSpans, s, e)),
     [applyToSelection, draft, draftSpans]
   )
+  // 文字全体が同じ装飾なら、入力欄の文字にもすぐ反映する（一部分だけの装飾は確定後とツールバーのプレビューで確認する）
+  const uniformStyle = useMemo(() => {
+    const segments = toSegments(draft, draftSpans)
+    return segments.length === 1 ? segments[0] : null
+  }, [draft, draftSpans])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -447,12 +452,12 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               gridArea: '1 / 1',
               // 未入力のときだけ薄い「アイデア」を仮表示し、入力があれば幅合わせ専用として隠す
               visibility: draft ? 'hidden' : 'visible',
-              color: nodeTextColor,
+              color: uniformStyle?.color ?? nodeTextColor,
               opacity: 0.35,
               pointerEvents: 'none',
               whiteSpace: 'pre',
               fontSize,
-              fontWeight: nodeFontWeight,
+              fontWeight: uniformStyle?.bold ? 700 : nodeFontWeight,
               lineHeight: 1.4,
             }}
           >
@@ -478,9 +483,9 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               padding: 0,
               margin: 0,
               font: 'inherit',
-              color: nodeTextColor,
+              color: uniformStyle?.color ?? nodeTextColor,
               fontSize,
-              fontWeight: nodeFontWeight,
+              fontWeight: uniformStyle?.bold ? 700 : nodeFontWeight,
               lineHeight: 1.4,
               width: '100%',
               minWidth: 0,
@@ -523,7 +528,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         >
           <button
             type="button"
-            title="太字（文字を選択して押す / Ctrl+B）"
+            title="太字（選んだ文字に付ける。選んでいなければ全体 / Ctrl+B）"
             onClick={toggleSelectionBold}
             style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--c-hover)', color: 'var(--c-text)', padding: 0 }}
           >
@@ -533,14 +538,14 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             <button
               key={c.value}
               type="button"
-              title={`${c.label}（文字を選択して押す）`}
+              title={`${c.label}（選んだ文字に付ける。選んでいなければ全体）`}
               onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, c.value))}
               style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
             type="button"
-            title="色を元に戻す（文字を選択して押す）"
+            title="色を元に戻す（選んだ文字。選んでいなければ全体）"
             onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, undefined))}
             style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0 }}
           />
