@@ -111,6 +111,7 @@ export function TopBar({
         {showNewButton && (
           <button
             onClick={() => addSheet()}
+            data-tour="new-sheet"
             style={{
               display: 'flex',
               alignItems: 'center',

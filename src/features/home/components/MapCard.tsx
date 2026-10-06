@@ -124,6 +124,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
     <>
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
       <div
+        data-tour="sheet-card"
         draggable={variant === 'normal'}
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', sheet.id)

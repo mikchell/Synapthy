@@ -751,6 +751,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         >
           <button
             onClick={(e) => { e.stopPropagation(); addChildNode(id) }}
+            data-tour="add-child"
             // 子がいるときは分岐点の丸の上に重ねる
             style={{ ...LOGIC_ADD_BTN, marginLeft: hasChildren ? JUNCTION_OFFSET - 9 : 4 }}
             title="子を追加"

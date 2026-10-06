@@ -225,6 +225,7 @@ export function EditorSidebar({ open, onOpenChange, isMobile }: Props) {
   if (!isMobile && !open) {
     return (
       <div
+        data-tour="editor-sidebar"
         style={{
           position: 'fixed',
           top: 56,
@@ -256,6 +257,7 @@ export function EditorSidebar({ open, onOpenChange, isMobile }: Props) {
 
   const panel = (
     <div
+      data-tour="editor-sidebar"
       style={{
         position: 'fixed',
         top: isMobile ? 0 : 56,
