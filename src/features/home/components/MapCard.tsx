@@ -91,14 +91,6 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
     setPickerOpen(false)
   }
 
-  // サムネイルをデフォルト（パステルカラー）に戻す
-  const handleThumbnailReset = () => {
-    const previous = sheet.thumbnailPath
-    setSheetThumbnail(sheet.id, null)
-    if (previous) deleteNodeImage(previous).catch(() => {})
-    setPickerOpen(false)
-  }
-
   const handleOpen = () => {
     if (variant === 'trash' || editing) return
     switchSheet(sheet.id)
@@ -295,7 +287,6 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
         thumbnailPath={sheet.thumbnailPath}
         onSelectTemplate={handleTemplateSelected}
         onUpload={() => thumbnailInputRef.current?.click()}
-        onReset={handleThumbnailReset}
         onClose={() => setPickerOpen(false)}
       />
 
