@@ -13,6 +13,7 @@ import { persist } from 'zustand/middleware'
 import { clampFolderName, clampSheetName, LIMITS } from '../../../lib/limits'
 import { isSheetLoaded } from '../../../lib/sheetRows'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
+import type { OutlineItem } from '../import/markdown'
 import { safeLineColor } from '../utils/edgeColor'
 import { remapSpans, safeTextColor, setBold, setColor } from '../utils/labelStyle'
 import type { NodeColor, FreeDirection, NodeImage, MindmapNodeData, ImageNodeData, AnyNodeData } from '../../../types/mindmap'
@@ -71,6 +72,8 @@ interface MindmapStore {
   setCurrentView: (view: 'home' | 'editor') => void
   // 上限（ごみ箱のシートも数える）に達していて作れなかったときだけ false を返す
   addSheet: () => boolean
+  // 読み込んだ階層（import/markdown.ts）から、新しいシートを作って開く。上限に達していて作れなかったときだけ false を返す
+  importSheet: (name: string, root: OutlineItem) => boolean
   moveSheetToTrash: (id: string) => void
   restoreSheetFromTrash: (id: string) => void
   permanentlyDeleteSheet: (id: string) => void
@@ -105,6 +108,47 @@ const generateId = () => `node-${Date.now()}-${nodeIdCounter++}`
 const generateSheetId = () => crypto.randomUUID()
 
 const COLORS: NodeColor[] = ['purple', 'blue', 'cyan', 'green', 'pink', 'orange']
+
+// 描画前のノードのおおよその大きさ（全角は文字サイズ分、半角は約半分）
+const estimateNodeSize = (label: string, isRoot: boolean) => {
+  const fontSize = isRoot ? 20 : 18
+  const textWidth = Array.from(label).reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? fontSize : fontSize * 0.55), 0)
+  return isRoot
+    ? { width: Math.min(280, Math.max(200, Math.ceil(textWidth) + 56)), height: 80 }
+    : { width: Math.ceil(textWidth) + 8, height: Math.ceil(fontSize * 1.4) + 8 }
+}
+
+// 読み込んだ階層から、ロジックツリーのノードとエッジを作る（位置は、あとの整列で決める）
+// 大きさは見積もりを入れておく。描画で実際の大きさが分かると、大きさの変化として検知され、整列し直される
+function buildGraphFromOutline(root: OutlineItem): { nodes: Node<MindmapNodeData>[]; edges: Edge[] } {
+  const nodes: Node<MindmapNodeData>[] = []
+  const edges: Edge[] = []
+  const pending = [{ item: root, parentId: null as string | null, depth: 0 }]
+  while (pending.length > 0) {
+    const { item, parentId, depth } = pending.pop()!
+    const id = parentId === null ? 'root' : generateId()
+    const data: MindmapNodeData = { label: item.label, color: COLORS[nodes.length % COLORS.length], depth }
+    if (parentId === null) data.isRoot = true
+    if (item.bold) data.bold = true
+    if (item.labelStyles) data.labelStyles = item.labelStyles
+    if (item.memo) data.memo = item.memo
+    nodes.push({ id, type: 'mindmapNode', position: { x: 0, y: 0 }, measured: estimateNodeSize(item.label, parentId === null), data })
+    if (parentId !== null) {
+      edges.push({
+        id: `edge-${parentId}-${id}`,
+        source: parentId,
+        target: id,
+        sourceHandle: 'right',
+        targetHandle: 'left',
+        type: 'interactive',
+        style: { stroke: '#7c3aed', strokeWidth: 2, opacity: 0.7 },
+      })
+    }
+    // 取り出すのは後ろからなので、兄弟の順番が保たれるよう、逆順で積む
+    for (let i = item.children.length - 1; i >= 0; i--) pending.push({ item: item.children[i], parentId: id, depth: depth + 1 })
+  }
+  return { nodes, edges }
+}
 
 const NODE_W = 240
 const NODE_H = 80
@@ -951,6 +995,39 @@ export const useMindmapStore = create<MindmapStore>()(
           edges: newSheet.edges,
           selectedNodeId: initialNodes[0]?.id ?? null,
         })
+        return true
+      },
+
+      importSheet: (name, root) => {
+        const { sheets, currentSheetId, nodes, edges } = get()
+        if (sheets.length >= LIMITS.sheets) return false
+        const updatedSheets = sheets.map((s) =>
+          s.id === currentSheetId ? { ...s, nodes, edges } : s
+        )
+        const graph = buildGraphFromOutline(root)
+        const now = new Date().toISOString()
+        const newSheet: Sheet = {
+          id: generateSheetId(),
+          name: clampSheetName(name),
+          mapType: 'linear',
+          nodes: graph.nodes,
+          edges: graph.edges,
+          thumbnailPath: randomTemplatePath(),
+          isStarred: false,
+          deletedAt: null,
+          lastOpenedAt: now,
+          updatedAt: now,
+          folderId: null,
+        }
+        set({
+          sheets: [...updatedSheets, newSheet],
+          currentSheetId: newSheet.id,
+          currentView: 'editor',
+          nodes: newSheet.nodes,
+          edges: newSheet.edges,
+          selectedNodeId: null,
+        })
+        get().tidyLayout()
         return true
       },
 
