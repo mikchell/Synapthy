@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # 依存パッケージ。minor / patch は 1 つの PR にまとめ、major は個別の PR にする
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions（ci.yml で SHA 固定している Action の更新）
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Tokyo
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      actions:
+        patterns:
+          - '*'
