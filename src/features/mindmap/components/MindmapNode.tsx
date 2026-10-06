@@ -587,14 +587,15 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               type="button"
               title={`${c.label}（文字を選んでいれば選んだ部分、選んでいなければ全体）`}
               onClick={() => applyColor(c.value)}
-              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: activeColor === c.value ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-accent)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
+              // 選択中は、丸の大きさ（18px）を変えずに、内側にリングを描く（色の部分が少し小さくなる）
+              style={{ width: 18, height: 18, flexShrink: 0, borderRadius: '50%', border: `2px solid ${activeColor === c.value ? 'var(--c-accent)' : 'var(--c-surface)'}`, boxShadow: activeColor === c.value ? 'inset 0 0 0 2px var(--c-surface)' : '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
             type="button"
             title="標準の色（文字を選んでいれば選んだ部分、選んでいなければ全体）"
             onClick={() => applyColor(undefined)}
-            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0, boxShadow: !mixedStyle && !activeColor ? '0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-accent)' : 'none' }}
+            style={{ width: 18, height: 18, flexShrink: 0, borderRadius: '50%', border: !mixedStyle && !activeColor ? '2px solid var(--c-accent)' : '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0, boxShadow: !mixedStyle && !activeColor ? 'inset 0 0 0 2px var(--c-surface)' : 'none' }}
           />
           {/* 編集中は入力欄で装飾が見えないので、ここに仕上がりを表示する */}
           {draftSpans && draft && (
