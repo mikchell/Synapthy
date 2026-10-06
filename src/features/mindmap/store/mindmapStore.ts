@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { remapSpans, safeTextColor, type LabelSpan } from '../labelStyle'
 
 export type NodeColor = 'purple' | 'blue' | 'cyan' | 'green' | 'pink' | 'orange'
 export type MapType = 'linear' | 'free'
@@ -29,6 +30,10 @@ export interface MindmapNodeData extends Record<string, unknown> {
   showBorder?: boolean
   // ノードに付けた画像（文字の上に表示する）。path はストレージ上の保存先、width/height は表示サイズ
   image?: NodeImage
+  // 文字の太字・色。bold / textColor はノード全体、labelStyles は文字の一部分だけの装飾（こちらが優先）
+  bold?: boolean
+  textColor?: string
+  labelStyles?: LabelSpan[]
 }
 
 export interface NodeImage {
@@ -88,6 +93,10 @@ interface MindmapStore {
   reparentDroppedNode: (nodeId: string) => void
   autoTidyLogicTree: () => void
   updateNodeLabel: (id: string, label: string) => void
+  // 文字と、文字の一部分の装飾（labelStyles）をまとめて更新する（編集の確定用）
+  commitNodeLabel: (id: string, label: string, labelStyles: LabelSpan[] | undefined) => void
+  // ノード全体の太字・色。undefined を渡した項目は解除する
+  updateNodeTextStyle: (id: string, style: { bold?: boolean; textColor?: string }) => void
   updateNodeColor: (id: string, color: NodeColor) => void
   updateNodeMemo: (id: string, memo: string) => void
   setNodeImage: (id: string, image: NodeImage | null) => void
@@ -716,9 +725,43 @@ export const useMindmapStore = create<MindmapStore>()(
 
       updateNodeLabel: (id, label) => {
         set({
-          nodes: get().nodes.map((n) =>
-            n.id === id ? { ...n, data: { ...n.data, label } } : n
-          ),
+          nodes: get().nodes.map((n) => {
+            if (n.id !== id) return n
+            const data = n.data as MindmapNodeData
+            // 文字が変わったら、文字の一部分の装飾も新しい文字に合わせてずらす
+            const labelStyles = remapSpans(data.label, label, data.labelStyles)
+            const next: MindmapNodeData = { ...data, label }
+            if (labelStyles) next.labelStyles = labelStyles
+            else delete next.labelStyles
+            return { ...n, data: next }
+          }),
+        })
+      },
+
+      commitNodeLabel: (id, label, labelStyles) => {
+        set({
+          nodes: get().nodes.map((n) => {
+            if (n.id !== id) return n
+            const next: MindmapNodeData = { ...(n.data as MindmapNodeData), label }
+            if (labelStyles && labelStyles.length > 0) next.labelStyles = labelStyles
+            else delete next.labelStyles
+            return { ...n, data: next }
+          }),
+        })
+      },
+
+      updateNodeTextStyle: (id, style) => {
+        set({
+          nodes: get().nodes.map((n) => {
+            if (n.id !== id || n.type !== 'mindmapNode') return n
+            const next: MindmapNodeData = { ...(n.data as MindmapNodeData) }
+            if (style.bold) next.bold = true
+            else delete next.bold
+            const color = safeTextColor(style.textColor)
+            if (color) next.textColor = color
+            else delete next.textColor
+            return { ...n, data: next }
+          }),
         })
       },
 

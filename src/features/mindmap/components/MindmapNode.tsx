@@ -1,10 +1,11 @@
 import { Handle, Position, type Node, type NodeProps, NodeResizeControl } from '@xyflow/react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
-import { ImagePlus, Plus, Trash2, StickyNote } from 'lucide-react'
+import { Bold, ImagePlus, Plus, Trash2, StickyNote } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
+import { remapSpans, safeTextColor, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
 import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
@@ -88,12 +89,12 @@ const DIRECTION_ANGLE: Record<FreeDirection, number> = {
 }
 
 function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<Node<MindmapNodeData>>) {
-  const { addChildNode, addSiblingNode, addChildNodeInDirection, updateNodeLabel, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
+  const { addChildNode, addSiblingNode, addChildNodeInDirection, commitNodeLabel, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
     useShallow((s) => ({
       addChildNode: s.addChildNode,
       addSiblingNode: s.addSiblingNode,
       addChildNodeInDirection: s.addChildNodeInDirection,
-      updateNodeLabel: s.updateNodeLabel,
+      commitNodeLabel: s.commitNodeLabel,
       deleteNode: s.deleteNode,
       setSelectedNodeId: s.setSelectedNodeId,
       editingNodeId: s.editingNodeId,
@@ -112,6 +113,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   const [editing, setEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(data.label)
+  // 編集中の、文字の一部分の装飾（確定するまでストアには反映しない）
+  const [draftSpans, setDraftSpans] = useState<LabelSpan[] | undefined>(data.labelStyles)
   // フリーモード：インジケーターの表示状態と方向
   const [showIndicator, setShowIndicator] = useState(false)
   const [indicatorDir, setIndicatorDir] = useState<FreeDirection | null>(null)
@@ -140,6 +143,9 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     paddingH: Math.round(baseSz.paddingH * stepScale),
     borderRadius: Math.round(baseSz.borderRadius * stepScale),
   }, [baseSz, stepScale])
+  // ノード全体の文字色・太さ（未設定なら今まで通り）
+  const nodeTextColor = safeTextColor(data.textColor) ?? (textOnly ? 'var(--c-text)' : colors.text)
+  const nodeFontWeight = data.bold ? 700 : textOnly ? 500 : sz.fontWeight
   // フリーモードは縦パディングを2.5倍にしてアスペクト比を約1.1:1に（楕円が丸く見える）
   // 画像付きのノードは、楕円だと画像の角がはみ出すので角丸の四角にする
   const ellipse = isFree && !data.image
@@ -160,7 +166,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       ? Math.round(20 * stepScale)
       : Math.round(sz.fontSize * Math.sqrt(scaleW * scaleH))
 
-  useEffect(() => { setDraft(data.label) }, [data.label])
+  useEffect(() => { setDraft(data.label); setDraftSpans(data.labelStyles) }, [data.label, data.labelStyles])
 
   useEffect(() => {
     if (editingNodeId === id) {
@@ -193,17 +199,35 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
 
   const commitEdit = useCallback(() => {
     const trimmed = draft.trim()
-    if (trimmed) updateNodeLabel(id, trimmed)
-    else setDraft(data.label)
+    if (trimmed) commitNodeLabel(id, trimmed, remapSpans(draft, trimmed, draftSpans))
+    else { setDraft(data.label); setDraftSpans(data.labelStyles) }
     setEditing(false)
-  }, [draft, id, data.label, updateNodeLabel])
+  }, [draft, draftSpans, id, data.label, data.labelStyles, commitNodeLabel])
+
+  // 入力欄で選んでいる範囲に、太字・色を付ける（範囲を選んでいないときは何もしない）
+  const applyToSelection = useCallback((apply: (start: number, end: number) => LabelSpan[] | undefined) => {
+    const input = inputRef.current
+    if (!input) return
+    const start = input.selectionStart ?? 0
+    const end = input.selectionEnd ?? 0
+    if (end <= start) return
+    setDraftSpans(apply(start, end))
+  }, [])
+  const toggleSelectionBold = useCallback(
+    () => applyToSelection((s, e) => toggleBold(draft, draftSpans, s, e)),
+    [applyToSelection, draft, draftSpans]
+  )
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') commitEdit()
-      if (e.key === 'Escape') { setDraft(data.label); setEditing(false) }
+      if (e.key === 'Escape') { setDraft(data.label); setDraftSpans(data.labelStyles); setEditing(false) }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        toggleSelectionBold()
+      }
     },
-    [commitEdit, data.label]
+    [commitEdit, data.label, data.labelStyles, toggleSelectionBold]
   )
 
   // モバイル：選択中ノード上での2本指ピンチでリサイズ
@@ -420,12 +444,12 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               gridArea: '1 / 1',
               // 未入力のときだけ薄い「アイデア」を仮表示し、入力があれば幅合わせ専用として隠す
               visibility: draft ? 'hidden' : 'visible',
-              color: textOnly ? 'var(--c-text)' : colors.text,
+              color: nodeTextColor,
               opacity: 0.35,
               pointerEvents: 'none',
               whiteSpace: 'pre',
               fontSize,
-              fontWeight: textOnly ? 500 : sz.fontWeight,
+              fontWeight: nodeFontWeight,
               lineHeight: 1.4,
             }}
           >
@@ -436,7 +460,11 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             // size=1 で input 自身の既定幅（約20文字分）をなくし、幅は上の span に任せる
             size={1}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value
+              setDraftSpans(remapSpans(draft, value, draftSpans))
+              setDraft(value)
+            }}
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
             style={{
@@ -447,9 +475,9 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               padding: 0,
               margin: 0,
               font: 'inherit',
-              color: textOnly ? 'var(--c-text)' : colors.text,
+              color: nodeTextColor,
               fontSize,
-              fontWeight: textOnly ? 500 : sz.fontWeight,
+              fontWeight: nodeFontWeight,
               lineHeight: 1.4,
               width: '100%',
               minWidth: 0,
@@ -460,9 +488,9 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       ) : showText && (
         <p
           style={{
-            color: textOnly ? 'var(--c-text)' : colors.text,
+            color: nodeTextColor,
             fontSize,
-            fontWeight: textOnly ? 500 : sz.fontWeight,
+            fontWeight: nodeFontWeight,
             margin: 0,
             textAlign: textOnly ? 'left' : 'center',
             wordBreak: textOnly ? 'normal' : 'break-word',
@@ -470,8 +498,58 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             opacity: data.label ? 1 : 0.35,
           }}
         >
-          {data.label || PLACEHOLDER_LABEL}
+          {data.label
+            ? toSegments(data.label, data.labelStyles).map((seg, i) => (
+                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: seg.color }}>{seg.text}</span>
+              ))
+            : PLACEHOLDER_LABEL}
         </p>
+      )}
+
+      {/* 編集中：選んだ文字を太字・色つきにするツールバー（ボタンを押しても入力欄のフォーカスを外さない） */}
+      {editing && (
+        <div
+          className="nodrag"
+          onMouseDown={(e) => e.preventDefault()}
+          style={{
+            position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', borderRadius: 10,
+            background: 'var(--c-glass)', border: '1px solid var(--c-border)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 60, whiteSpace: 'nowrap',
+          }}
+        >
+          <button
+            type="button"
+            title="太字（文字を選択して押す / Ctrl+B）"
+            onClick={toggleSelectionBold}
+            style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--c-hover)', color: 'var(--c-text)', padding: 0 }}
+          >
+            <Bold size={14} />
+          </button>
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              title={`${c.label}（文字を選択して押す）`}
+              onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, c.value))}
+              style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
+            />
+          ))}
+          <button
+            type="button"
+            title="色を元に戻す（文字を選択して押す）"
+            onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, undefined))}
+            style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0 }}
+          />
+          {/* 編集中は入力欄で装飾が見えないので、ここに仕上がりを表示する */}
+          {draftSpans && draft && (
+            <span style={{ marginLeft: 4, paddingLeft: 8, borderLeft: '1px solid var(--c-border)', fontSize: 12, color: nodeTextColor, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {toSegments(draft, draftSpans).map((seg, i) => (
+                <span key={i} style={{ fontWeight: seg.bold ? 700 : undefined, color: seg.color }}>{seg.text}</span>
+              ))}
+            </span>
+          )}
+        </div>
       )}
 
       {/* メモインジケーター（メモあり・非選択時） */}
