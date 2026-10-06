@@ -3,7 +3,7 @@ import { AlignJustify, Bold, GripVertical } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { LINE_COLORS, safeLineColor } from '../edgeColor'
-import { TEXT_COLORS } from '../labelStyle'
+import { displayTextColor, TEXT_COLORS } from '../labelStyle'
 import { type MindmapNodeData, NODE_SIZE_STEPS, useMindmapStore } from '../store/mindmapStore'
 
 export function NodePanel() {
@@ -249,7 +249,7 @@ export function NodePanel() {
                           title={c.label}
                           style={{
                             width: 18, height: 18, borderRadius: '50%', padding: 0, cursor: 'pointer',
-                            background: c.value ?? 'transparent',
+                            background: c.value ? displayTextColor(c.value) : 'transparent',
                             border: c.value ? '2px solid var(--c-surface)' : '1.5px dashed var(--c-text-3)',
                             boxShadow: active ? '0 0 0 2px var(--c-accent)' : c.value ? '0 0 0 1px var(--c-border)' : 'none',
                           }}
@@ -274,7 +274,7 @@ export function NodePanel() {
                           title={`${c.label}（このシートの線すべて）`}
                           style={{
                             width: 18, height: 18, borderRadius: '50%', padding: 0, cursor: 'pointer',
-                            background: c.value ?? 'transparent',
+                            background: c.value ? displayTextColor(c.value) : 'transparent',
                             border: c.value ? '2px solid var(--c-surface)' : '1.5px dashed var(--c-text-3)',
                             boxShadow: active ? '0 0 0 2px var(--c-accent)' : c.value ? '0 0 0 1px var(--c-border)' : 'none',
                           }}

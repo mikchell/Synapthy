@@ -31,6 +31,9 @@
   --c-accent-soft: rgba(124, 58, 237, 0.1);   /* 選択中などの薄い背景 */
   --c-accent-tint: #f5f3ff;   /* ホバー時やプレビューの淡い背景 */
   --c-line: #7c3aed;          /* ノード同士をつなぐ線・分岐点 */
+
+  /* 文字・線に付ける色（labelStyle.ts の TEXT_COLORS と対応。ライトは保存値と同じ） */
+  --tc-red: #dc2626; --tc-orange: #ea580c; --tc-green: #16a34a; --tc-blue: #2563eb; --tc-purple: #7c3aed;
   --c-select: #7c3aed;        /* 選択中のノードの枠 */
   --c-dot: rgba(148, 163, 184, 0.6);          /* キャンバスのドット */
   --c-logo-bg: #18181b;
@@ -60,6 +63,9 @@
   --c-accent-soft: rgba(146, 121, 230, 0.22);
   --c-accent-tint: rgba(146, 121, 230, 0.14);
   --c-line: #a995f0;
+
+  /* ダークでは、背景とノードの塗りのどちらの上でもコントラスト比 4.5 以上になる明るい版にする */
+  --tc-red: #ffb8b8; --tc-orange: #ffc994; --tc-green: #98edb6; --tc-blue: #b0d6ff; --tc-purple: #d8cbff;
   --c-select: #7dbaf8;
   --c-dot: rgba(255, 255, 255, 0.07);
   --c-logo-bg: #f5f5f5;
