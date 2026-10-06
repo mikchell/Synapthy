@@ -1,7 +1,7 @@
 // ホームのカードのサムネイルに使える、あらかじめ用意した画像（public/thumbnails/ に同梱）
 // sheets.data.thumbnailPath には `template:<id>` の形で保存する（Storage にはアップロードしない）
 
-export type ThumbnailCategory = 'scenery' | 'art' | 'japan' | 'space'
+export type ThumbnailCategory = 'scenery' | 'art' | 'watercolor' | 'japan' | 'space'
 
 export interface ThumbnailTemplate {
   id: string
@@ -15,6 +15,7 @@ export interface ThumbnailTemplate {
 export const THUMBNAIL_CATEGORIES: { id: ThumbnailCategory; label: string }[] = [
   { id: 'scenery', label: '風景・抽象' },
   { id: 'art', label: '名画' },
+  { id: 'watercolor', label: '水彩画' },
   { id: 'japan', label: '日本美術' },
   { id: 'space', label: '宇宙' },
 ]
@@ -48,6 +49,19 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
   t('birth-of-venus', 'ヴィーナスの誕生（ボッティチェリ）', 'art'),
   t('grande-jatte', 'グランド・ジャット島の日曜日の午後（スーラ）', 'art'),
   t('fighting-temeraire', '戦艦テメレール号（ターナー）', 'art'),
+  // 水彩画（すべてパブリックドメインまたはCC0）
+  t('turner-venice-salute', 'ヴェネツィア、サルーテ聖堂の夕暮れ（ターナー）', 'watercolor'),
+  t('turner-lucerne', '湖上から見たルツェルン（ターナー）', 'watercolor'),
+  t('turner-dark-rigi', '朝のリギ山とルツェルン湖（ターナー）', 'watercolor'),
+  t('homer-watching-ships', '船を見つめる（ウィンスロー・ホーマー）', 'watercolor'),
+  t('homer-on-the-sands', '砂浜にて（ウィンスロー・ホーマー）', 'watercolor'),
+  t('sargent-rio-mendicanti', 'ヴェネツィア、ディ・メンディカンティ運河（サージェント）', 'watercolor'),
+  t('sargent-campo-frari', 'ヴェネツィア、フラーリ広場（サージェント）', 'watercolor'),
+  t('cezanne-sainte-victoire', 'サント＝ヴィクトワール山と高架橋（セザンヌ）', 'watercolor'),
+  t('durer-turf', '大きな芝草（デューラー）', 'watercolor'),
+  t('constable-borrowdale', 'ボローデール、晴れた日の夕べ（コンスタブル）', 'watercolor'),
+  t('girtin-findlater', 'フィンドレイター城（ガーティン）', 'watercolor'),
+  t('klee-strict-landscape', '青の厳格な風景（クレー）', 'watercolor'),
   // 日本美術（すべてパブリックドメインまたはCC0）
   t('great-wave', '神奈川沖浪裏（葛飾北斎）', 'japan'),
   t('red-fuji', '凱風快晴（葛飾北斎）', 'japan'),

@@ -42,6 +42,25 @@
 | `grande-jatte.jpg` | グランド・ジャット島の日曜日の午後 | スーラ | [Commons](https://commons.wikimedia.org/wiki/File:Georges_Seurat_-_A_Sunday_on_La_Grande_Jatte_--_1884_-_Google_Art_Project.jpg) |
 | `fighting-temeraire.jpg` | 戦艦テメレール号 | ターナー | [Commons](https://commons.wikimedia.org/wiki/File:The_Fighting_Temeraire,_JMW_Turner,_National_Gallery.jpg) |
 
+### 水彩画（パブリックドメイン / CC0）
+
+著作権の保護期間が切れた画家の水彩画です。ライセンス表示は取得時に Commons の API で確認しました（媒体が水彩であることは、作品名と所蔵館の情報から判断しています）。
+
+| ファイル | 作品 | 作者 | ライセンス | 出典 |
+|---|---|---|---|---|
+| `turner-venice-salute.jpg` | ヴェネツィア、サルーテ聖堂の夕暮れ | J. M. W. ターナー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:(Barcelona)_Santa_Maria_della_Salute_and_the_Dogana,_Venice,_at_Sunset,_across_the_Bacino_-_1840_-_William_Turner_Tate_Britain.jpg) |
+| `turner-lucerne.jpg` | 湖上から見たルツェルン | J. M. W. ターナー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Joseph_Mallord_William_Turner_-_Lucerne_from_the_Lake_-_Google_Art_Project.jpg) |
+| `turner-dark-rigi.jpg` | 朝のリギ山とルツェルン湖 | J. M. W. ターナー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:The_Dark_Rigi,_the_Lake_of_Lucerne,_Showing_the_Rigi_at_Sunrise_by_Turner.jpg) |
+| `homer-watching-ships.jpg` | 船を見つめる | ウィンスロー・ホーマー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Winslow_Homer_-_Watching_the_Ships,_Gloucester.jpg) |
+| `homer-on-the-sands.jpg` | 砂浜にて | ウィンスロー・ホーマー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Winslow_Homer_-_On_the_Sands_(1881).jpg) |
+| `sargent-rio-mendicanti.jpg` | ヴェネツィア、ディ・メンディカンティ運河 | ジョン・シンガー・サージェント | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:John_Singer_Sargent_-_Rio_dei_Mendicanti,_Venice_-_Google_Art_Project.jpg) |
+| `sargent-campo-frari.jpg` | ヴェネツィア、フラーリ広場 | ジョン・シンガー・サージェント | CC0 | [Commons](https://commons.wikimedia.org/wiki/File:John_Singer_Sargent,_Campo_dei_Frari,_Venice,_c._1880,_NGA_168825.jpg) |
+| `cezanne-sainte-victoire.jpg` | サント＝ヴィクトワール山と高架橋 | ポール・セザンヌ | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Paul_C%C3%A9zanne_-_Mont_Sainte-Victoire_and_the_Viaduct_of_the_Arc_River_Valley_(Metropolitan_Museum_of_Art).jpg) |
+| `durer-turf.jpg` | 大きな芝草 | アルブレヒト・デューラー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Albrecht_D%C3%BCrer_-_The_Large_Piece_of_Turf,_1503_-_Google_Art_Project.jpg) |
+| `constable-borrowdale.jpg` | ボローデール、晴れた日の夕べ | ジョン・コンスタブル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:John_Constable_-_Borrowdale-_Evening_after_a_Fine_Day,_1_October_1806_-_Google_Art_Project.jpg) |
+| `girtin-findlater.jpg` | フィンドレイター城 | トーマス・ガーティン | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Thomas_Girtin_-_Findlater_Castle,_Banff_-_Google_Art_Project.jpg) |
+| `klee-strict-landscape.jpg` | 青の厳格な風景 | パウル・クレー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Paul_Klee_Strenge_Landschaft_in_Blau_1917.jpeg) |
+
 ### 日本美術（パブリックドメイン / CC0）
 
 浮世絵と琳派の作品です。ピッカーでは「日本美術」に表示します（北斎の「神奈川沖浪裏」「凱風快晴」、広重の「大はしあたけの夕立」は、上の名画の表にあります）。
@@ -79,5 +98,5 @@ NASA の画像は、原則として米国政府の著作物でパブリックド
 ## テンプレートを追加するには
 
 1. 画像を長辺 640px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
-2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'japan'`、`'space'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
+2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'watercolor'`、`'japan'`、`'space'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
 3. この表に出典を追記する
