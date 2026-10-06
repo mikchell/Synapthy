@@ -1,7 +1,7 @@
 // ホームのカードのサムネイルに使える、あらかじめ用意した画像（public/thumbnails/ に同梱）
 // sheets.data.thumbnailPath には `template:<id>` の形で保存する（Storage にはアップロードしない）
 
-export type ThumbnailCategory = 'scenery' | 'art' | 'japan' | 'space' | 'botanical'
+export type ThumbnailCategory = 'scenery' | 'art' | 'japan' | 'space'
 
 export interface ThumbnailTemplate {
   id: string
@@ -17,7 +17,6 @@ export const THUMBNAIL_CATEGORIES: { id: ThumbnailCategory; label: string }[] = 
   { id: 'art', label: '名画' },
   { id: 'japan', label: '日本美術' },
   { id: 'space', label: '宇宙' },
-  { id: 'botanical', label: '博物画' },
 ]
 
 const PREFIX = 'template:'
@@ -74,17 +73,6 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
   t('cosmic-cliffs', 'カリーナ星雲の宇宙の崖（ウェッブ）', 'space'),
   t('saturn', '土星（カッシーニ）', 'space'),
   t('jupiter', '木星（ボイジャー1号）', 'space'),
-  // 博物画（すべてパブリックドメイン）
-  t('hummingbirds', 'ハチドリ（ヘッケル）', 'botanical'),
-  t('jellyfish', 'クラゲ（ヘッケル）', 'botanical'),
-  t('sea-anemones', 'イソギンチャク（ヘッケル）', 'botanical'),
-  t('pitcher-plants', 'ウツボカズラ（ヘッケル）', 'botanical'),
-  t('bats', 'コウモリ（ヘッケル）', 'botanical'),
-  t('siphonophores', 'クダクラゲ（ヘッケル）', 'botanical'),
-  t('corals', 'サンゴ（ヘッケル）', 'botanical'),
-  t('flamingo', 'アメリカフラミンゴ（オーデュボン）', 'botanical', 'center 10%'),
-  t('banana-merian', 'バナナの花と実（メリアン）', 'botanical'),
-  t('insects-merian', '昆虫の変態（メリアン）', 'botanical'),
 ]
 
 export const toTemplatePath = (id: string) => `${PREFIX}${id}`

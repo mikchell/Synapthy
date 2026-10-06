@@ -76,25 +76,8 @@ NASA の画像は、原則として米国政府の著作物でパブリックド
 | `saturn.jpg` | 土星（カッシーニ） | NASA / JPL / Space Science Institute | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Saturn_during_Equinox.jpg) |
 | `jupiter.jpg` | 木星（ボイジャー1号） | NASA / Caltech / JPL | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Jupiter_from_Voyager_1.jpg) |
 
-### 博物画（パブリックドメイン）
-
-著作権の保護期間が切れた図譜の図版です。
-
-| ファイル | 作品 | 作者・クレジット | ライセンス | 出典 |
-|---|---|---|---|---|
-| `hummingbirds.jpg` | ハチドリ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Trochilidae.jpg) |
-| `jellyfish.jpg` | クラゲ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Discomedusae_8.jpg) |
-| `sea-anemones.jpg` | イソギンチャク | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Actiniae.jpg) |
-| `pitcher-plants.jpg` | ウツボカズラ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Nepenthaceae.jpg) |
-| `bats.jpg` | コウモリ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Chiroptera.jpg) |
-| `siphonophores.jpg` | クダクラゲ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Siphonophorae.jpg) |
-| `corals.jpg` | サンゴ | エルンスト・ヘッケル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Haeckel_Hexacoralla.jpg) |
-| `flamingo.jpg` | アメリカフラミンゴ | ジョン・ジェームズ・オーデュボン | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:431_American_Flamingo.jpg) |
-| `banana-merian.jpg` | バナナの花と実 | マリア・シビラ・メリアン | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Maria_Sibylla_Merian_Banana_Flower_and_Fruit,_from_Metamorphosis_insectorum_Surinamensium_1705.jpg) |
-| `insects-merian.jpg` | 昆虫の変態 | マリア・シビラ・メリアン | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Maria_Merian_Metamorphosis_Insectorum_Surinamensium_MIA_P18717.jpg) |
-
 ## テンプレートを追加するには
 
 1. 画像を長辺 640px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
-2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'japan'`、`'space'`、`'botanical'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
+2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'japan'`、`'space'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
 3. この表に出典を追記する
