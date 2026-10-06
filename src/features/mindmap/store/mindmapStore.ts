@@ -11,6 +11,7 @@ import {
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { clampName, LIMITS } from '../../../lib/limits'
+import { isSheetLoaded } from '../../../lib/sheetLoad'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
 import { safeLineColor } from '../edgeColor'
 import { remapSpans, safeTextColor, setBold, setColor, type LabelSpan } from '../labelStyle'
@@ -60,6 +61,9 @@ export interface Sheet {
   mapType?: MapType
   nodes: Node<AnyNodeData>[]
   edges: Edge[]
+  // ノードの中身（nodes / edges）を読み込んでいるか。false のシートは中身が空で、DB に書き込んではいけない
+  // （初回ロードでは、軽い項目だけを取得し、中身はシートを開くときに取得する）。未設定は読み込み済みとして扱う
+  loaded?: boolean
   // ホームのカードに表示する画像のストレージ上のパス。未設定ならシートごとのパステルカラー
   thumbnailPath?: string | null
   // このシートの線の色（edgeColor.ts のパレットのいずれか）。未設定ならテーマの色
@@ -138,6 +142,8 @@ interface MindmapStore {
   setSheetLineColor: (id: string, color: string | null) => void
   switchSheet: (id: string) => void
   loadSheets: (sheets: Sheet[]) => void
+  // 読み込んでいなかったシートに、取得したノードの中身を入れる。すでに読み込み済みのシートには何もしない
+  markSheetLoaded: (id: string, nodes: Node<AnyNodeData>[], edges: Edge[]) => void
   moveSheetToFolder: (sheetId: string, folderId: string | null) => void
   // 上限に達していて作れなかったときだけ false を返す（名前が空のときは何もせず true）
   createFolder: (name: string) => boolean
@@ -1110,6 +1116,17 @@ export const useMindmapStore = create<MindmapStore>()(
           nodes: current.nodes,
           edges: current.edges,
           selectedNodeId: null,
+        })
+      },
+
+      markSheetLoaded: (id, nodes, edges) => {
+        const { sheets, currentSheetId } = get()
+        const target = sheets.find((s) => s.id === id)
+        // 取得中に削除されたシートや、すでに読み込み済みのシート（その後の編集を上書きしてしまう）には何もしない
+        if (!target || isSheetLoaded(target)) return
+        set({
+          sheets: sheets.map((s) => (s.id === id ? { ...s, nodes, edges, loaded: true } : s)),
+          ...(id === currentSheetId ? { nodes, edges, selectedNodeId: null } : {}),
         })
       },
 

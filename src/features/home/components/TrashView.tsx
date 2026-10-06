@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useMindmapStore, type Sheet } from '../../mindmap/store/mindmapStore'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
-import { deleteNodeImages, getSheetImagePaths } from '../../../lib/imageApi'
+import { collectSheetImagePaths, deleteNodeImages } from '../../../lib/imageApi'
 import { MapGrid } from './MapGrid'
 
 interface Props {
@@ -46,10 +46,11 @@ export function TrashView({ sheets, viewMode }: Props) {
         title="ゴミ箱を空にしますか？"
         description={`ゴミ箱内の${sheets.length}件のマップを完全に削除します。この操作は取り消せません。`}
         confirmLabel="空にする"
-        onConfirm={() => {
+        onConfirm={async () => {
           setConfirmOpen(false)
+          // 画像の保存場所は、シートを消す前に集める（中身を読み込んでいないシートは、中身を取得して調べる）
+          const imagePaths = await collectSheetImagePaths(sheets)
           sheets.forEach((s) => permanentlyDeleteSheet(s.id))
-          const imagePaths = sheets.flatMap((s) => getSheetImagePaths(s))
           if (imagePaths.length > 0) deleteNodeImages(imagePaths).catch(() => {})
         }}
         onCancel={() => setConfirmOpen(false)}

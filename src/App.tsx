@@ -1,6 +1,7 @@
 import { Toaster } from 'sonner'
 import { MindmapCanvas } from './features/mindmap/components/MindmapCanvas'
 import { useSheetsSync } from './features/mindmap/hooks/useSheetsSync'
+import { useCurrentSheetLoader } from './features/mindmap/sheetLoader'
 import { useMindmapStore } from './features/mindmap/store/mindmapStore'
 import { HomeScreen } from './features/home/components/HomeScreen'
 import { LoginScreen } from './features/auth/LoginScreen'
@@ -15,6 +16,7 @@ function App() {
   const theme = useTheme((s) => s.theme)
 
   useSheetsSync(user ?? null)
+  useCurrentSheetLoader(user ?? null)
   useTutorialAutoStart(user ?? null)
 
   if (loading) return null
