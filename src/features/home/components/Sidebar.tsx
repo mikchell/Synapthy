@@ -105,7 +105,7 @@ function FolderRow({
           <input
             ref={inputRef}
             value={draft}
-            maxLength={LIMITS.nameLength}
+            maxLength={LIMITS.folderNameLength}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -267,7 +267,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             <input
               ref={newFolderInputRef}
               value={newFolderName}
-              maxLength={LIMITS.nameLength}
+              maxLength={LIMITS.folderNameLength}
               onChange={(e) => setNewFolderName(e.target.value)}
               onBlur={commitNewFolder}
               onKeyDown={(e) => {

@@ -12,7 +12,7 @@ Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに�
 |---|---|---|---|
 | `id` | `uuid` | PK, `gen_random_uuid()` | シートID |
 | `user_id` | `uuid` | FK → `auth.users.id`, `on delete cascade` | 所有者。INSERTトリガーで `auth.uid()` を自動セット |
-| `name` | `text` | `not null default 'シート1'`, `check (char_length(name) <= 100)` | シート名。100文字まで |
+| `name` | `text` | `not null default 'シート1'`, `check (char_length(name) <= 30)` | シート名。30文字まで |
 | `data` | `jsonb` | `not null default '{"nodes":[],"edges":[]}'`, `check (octet_length(data::text) <= 2097152)` | `{ mapType, nodes, edges }` をまとめて格納。2MBまで |
 | `is_starred` | `boolean` | `not null default false` | スター（お気に入り） |
 | `deleted_at` | `timestamptz` | `null` 可 | ゴミ箱に入れた日時。`null` = 未削除 |
@@ -29,7 +29,7 @@ Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに�
 |---|---|---|---|
 | `id` | `uuid` | PK, `gen_random_uuid()` | フォルダID |
 | `user_id` | `uuid` | FK → `auth.users.id`, `on delete cascade` | 所有者。INSERTトリガーで自動セット |
-| `name` | `text` | `not null`, `check (char_length(name) <= 100)` | フォルダ名。100文字まで |
+| `name` | `text` | `not null`, `check (char_length(name) <= 10)` | フォルダ名。10文字まで |
 | `created_at` | `timestamptz` | `not null default now()` | 作成日時 |
 
 ## Storage
@@ -64,7 +64,8 @@ Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに�
 |---|---|---|
 | シート数 | 100枚（ごみ箱のシートも数える） | `sheets_check_limit` トリガー |
 | フォルダ数 | 50個 | `folders_check_limit` トリガー |
-| シート名・フォルダ名の長さ | 100文字 | CHECK 制約（`sheets_name_length_check` / `folders_name_length_check`） |
+| シート名の長さ | 30文字 | CHECK 制約（`sheets_name_length_check`） |
+| フォルダ名の長さ | 10文字 | CHECK 制約（`folders_name_length_check`） |
 | 1シートのサイズ | 2MB | CHECK 制約（`sheets_data_size_check`） |
 | 画像の枚数（サムネイルも含む） | 200枚 | `node-images` のアップロードのポリシー |
 | 画像1枚のサイズ | 2MB | バケットの `file_size_limit` |
@@ -73,7 +74,7 @@ Synapthy は Supabase（PostgreSQL + Auth + Storage）をバックエンドに�
 - アプリは `upsert` で保存する。`upsert` は、すでにあるシートの更新でも INSERT のトリガーを呼ぶため、トリガーは**すでにあるIDを数えずに通す**。通さないと、上限に達した人が、既存のシートの編集を保存できなくなる
 - 同時に大量のリクエストを送られても、全員が「まだ上限の手前」と数えて通過しないよう、トリガーはユーザーごとのアドバイザリロックで直列化している
 - 画像の枚数は、ポリシーの式の中ではロックを使えないため、同時に大量にアップロードされると、一度だけ少し超えることがある（超えたあとは、すべて拒否される）。また、拒否はポリシー違反（RLS）として返るので、メッセージを変えられない
-- すでにあるデータは検査し直さない。ただしマイグレーションの冒頭で、2MBを超えるシートや100文字を超える名前がないかを確かめ、あれば何も変更せずに止まる（上限を超える行は、更新できなくなってしまうため）
+- すでにあるデータは検査し直さない。ただしマイグレーションの冒頭で、2MBを超えるシートがないかを確かめ、あれば何も変更せずに止まる（上限を超える行は、更新できなくなってしまうため）。名前の上限を引き下げたときは（`20261006000003`）、新しい上限を超える既存の名前を、先頭から切り詰めてから制約を作り直す
 - 1アカウントが使える容量の最大値を抑えるための対策で、**アカウントを複数作られると、その分だけ増える**。単位時間あたりの書き込み回数の制限（レート制限）は入れていない
 
 ## インデックス
@@ -101,6 +102,7 @@ idx_sheets_user_id_folder_id    -- user_id + folder_id（フォルダ別一覧�
 | `20260912000003_add_node_images_storage.sql` | `node-images` ストレージバケットとポリシー追加 |
 | `20261006000001_security_hardening.sql` | バケットのサイズ・形式の制限、`sheets.data` のサイズ制約、関数の `search_path` 固定、`folder_id` の所有者チェック |
 | `20261006000002_add_abuse_limits.sql` | 悪用対策の上限（シート・フォルダの数、名前の長さ、シートと画像のサイズ、画像の枚数）。[利用上限](#利用上限悪用対策) を参照 |
+| `20261006000003_shorten_name_limits.sql` | 名前の長さの上限を引き下げる（シート名 100 → 30 文字、フォルダ名 100 → 10 文字）。新しい上限を超える既存の名前は、先頭から切り詰める |
 
 ## クライアント側のアクセス関数
 

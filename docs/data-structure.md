@@ -192,7 +192,7 @@ DBのテーブルとは別に、ガイドツアーの完了フラグを、ログ
 |---|---|---|
 | `id` | `uuid` | PK（`gen_random_uuid()`） |
 | `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | シート名。100文字まで |
+| `name` | `text` | シート名。30文字まで |
 | `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[], ... }`（サムネイル・線の色もここに入る）。2MBまで |
 | `is_starred` | `boolean` | スター（お気に入り）フラグ |
 | `deleted_at` | `timestamptz` \| `null` | ゴミ箱に入れた日時。null なら未削除 |
@@ -213,7 +213,7 @@ RLS により、ユーザーは自分の行のみ参照・作成・更新・削�
 |---|---|---|
 | `id` | `uuid` | PK |
 | `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | フォルダ名。100文字まで |
+| `name` | `text` | フォルダ名。10文字まで |
 | `created_at` | `timestamptz` | 作成日時 |
 
 フラット構造（フォルダの中にフォルダは作れない）で、1シートは最大1フォルダに属します。
