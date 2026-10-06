@@ -1,10 +1,12 @@
-import { Clock, Folder as FolderIcon, LayoutGrid, LogOut, Pencil, Plus, Star, Trash2, X, type LucideIcon } from 'lucide-react'
+import { Clock, Folder as FolderIcon, HelpCircle, LayoutGrid, LogOut, Pencil, Plus, RotateCcw, Star, Trash2, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
+import { resetTutorial, useTutorialStore } from '../../tutorial/tutorialStore'
+import { toast } from 'sonner'
 
 export type HomeSection = 'recent' | 'all' | 'starred' | 'trash' | 'folder'
 
@@ -172,6 +174,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
   const { user, signOut } = useAuth()
   const folders = useMindmapStore((s) => s.folders)
   const createFolder = useMindmapStore((s) => s.createFolder)
+  const startTutorial = useTutorialStore((s) => s.start)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const [addingFolder, setAddingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -223,6 +226,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
         ))}
 
         <div
+          data-tour="home-folders"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -281,6 +285,23 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
           </div>
         )}
       </nav>
+
+      <button onClick={startTutorial} data-tour="tutorial-help" style={{ ...NAV_BTN(false), marginBottom: 8 }}>
+        <HelpCircle size={16} />
+        使い方
+      </button>
+
+      {/* 開発環境だけ：チュートリアルの完了状態をリセットして、最初から表示し直す */}
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => resetTutorial().catch(() => toast.error('チュートリアルのリセットに失敗しました'))}
+          title="開発用：チュートリアルの完了状態を消して、最初から表示します"
+          style={{ ...NAV_BTN(false), marginBottom: 8, border: '1px dashed var(--c-border)' }}
+        >
+          <RotateCcw size={16} />
+          チュートリアルをリセット（開発用）
+        </button>
+      )}
 
       {user && (
         <div

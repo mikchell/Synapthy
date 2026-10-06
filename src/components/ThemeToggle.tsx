@@ -10,6 +10,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
+      data-tour="theme-toggle"
       title={label}
       aria-label={label}
       style={{

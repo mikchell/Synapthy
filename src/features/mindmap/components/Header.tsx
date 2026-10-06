@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Loader2, LogOut, Save } from 'lucide-react'
+import { HelpCircle, Loader2, LogOut, Save } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useIsMobile } from '../../../hooks/useIsMobile'
@@ -7,12 +7,14 @@ import { useMindmapStore } from '../store/mindmapStore'
 import { ConfirmDialog } from './ConfirmDialog'
 import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
 import { ThemeToggle } from '../../../components/ThemeToggle'
+import { useTutorialStore } from '../../tutorial/tutorialStore'
 
 export function Header() {
   const { user, signOut } = useAuth()
   const isMobile = useIsMobile()
   const isSaving = useMindmapStore((s) => s.isSaving)
   const setCurrentView = useMindmapStore((s) => s.setCurrentView)
+  const startTutorial = useTutorialStore((s) => s.start)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
   return (
@@ -65,6 +67,28 @@ export function Header() {
 
         {/* 右側 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
+          <button
+            onClick={startTutorial}
+            data-tour="tutorial-help"
+            title="使い方"
+            aria-label="使い方"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              flexShrink: 0,
+              borderRadius: 8,
+              border: '1px solid var(--c-border)',
+              background: 'none',
+              color: 'var(--c-text-2)',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <HelpCircle size={15} />
+          </button>
           <ThemeToggle />
           {/* 保存状態 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

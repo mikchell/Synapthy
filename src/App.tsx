@@ -6,6 +6,8 @@ import { HomeScreen } from './features/home/components/HomeScreen'
 import { LoginScreen } from './features/auth/LoginScreen'
 import { useAuth } from './features/auth/useAuth'
 import { useTheme } from './lib/theme'
+import { TutorialTour } from './features/tutorial/TutorialTour'
+import { useTutorialAutoStart } from './features/tutorial/useTutorialAutoStart'
 
 function App() {
   const { user, loading } = useAuth()
@@ -13,6 +15,7 @@ function App() {
   const theme = useTheme((s) => s.theme)
 
   useSheetsSync(user ?? null)
+  useTutorialAutoStart(user ?? null)
 
   if (loading) return null
 
@@ -25,6 +28,7 @@ function App() {
       ) : (
         <MindmapCanvas />
       )}
+      {user && <TutorialTour />}
       <Toaster position="bottom-right" richColors theme={theme} />
     </>
   )
