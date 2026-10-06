@@ -85,6 +85,8 @@ interface MindmapStore {
   selectedNodeId: string | null
   editingNodeId: string | null
   isSaving: boolean
+  // localStorage に残るキャッシュの持ち主（ログイン中のユーザーID）。誰のものでもなければ null
+  ownerId: string | null
 
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
@@ -119,6 +121,8 @@ interface MindmapStore {
   setEditingNodeId: (id: string | null) => void
   setIsSaving: (v: boolean) => void
   resetMindmap: () => void
+  // キャッシュの持ち主をログイン中のユーザーに合わせる。持ち主が変わるときは、前の持ち主のデータを捨てて初期状態に戻す（戻したら true）
+  claimOwnership: (userId: string | null) => boolean
 
   setCurrentView: (view: 'home' | 'editor') => void
   addSheet: () => void
@@ -266,7 +270,7 @@ function overlapsAnyNode(cx: number, cy: number, size: { w: number; h: number },
 }
 
 
-const initialSheet: Sheet = {
+const createInitialSheet = (): Sheet => ({
   id: crypto.randomUUID(),
   name: 'シート1',
   mapType: 'linear',
@@ -277,7 +281,9 @@ const initialSheet: Sheet = {
   lastOpenedAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   folderId: null,
-}
+})
+
+const initialSheet = createInitialSheet()
 
 // localStorageに残った旧バージョンのシート（is_starred等の新フィールド追加前）を補完する。
 // 未補完のままだと updatedAt などが undefined になり、ホーム画面表示時にクラッシュする。
@@ -306,6 +312,7 @@ export const useMindmapStore = create<MindmapStore>()(
       selectedNodeId: null,
       editingNodeId: null,
       isSaving: false,
+      ownerId: null,
 
       onNodesChange: (changes) => {
         // 中心テーマ（ルート）は削除できない（ツリー全体と自動整列の起点のため）。削除の変更は取り除く
@@ -950,6 +957,26 @@ export const useMindmapStore = create<MindmapStore>()(
         set({ nodes: fresh, edges: [], selectedNodeId: null })
       },
 
+      claimOwnership: (userId) => {
+        if (get().ownerId === userId) return false
+        // 共有端末で、前の人のマインドマップが次の人のアカウントに保存されないよう、持ち主が変わるときは必ず捨てる
+        // （持ち主が不明な、この仕組みの導入前のキャッシュも同じ扱い。ログイン中なら、続けてサーバーから読み込み直す）
+        const fresh = createInitialSheet()
+        set({
+          ownerId: userId,
+          sheets: [fresh],
+          folders: [],
+          currentSheetId: fresh.id,
+          currentView: 'home',
+          nodes: fresh.nodes,
+          edges: fresh.edges,
+          selectedNodeId: null,
+          editingNodeId: null,
+          isSaving: false,
+        })
+        return true
+      },
+
       setCurrentView: (view) => set({ currentView: view }),
 
       addSheet: () => {
@@ -1119,6 +1146,7 @@ export const useMindmapStore = create<MindmapStore>()(
         currentSheetId: state.currentSheetId,
         currentView: state.currentView,
         folders: state.folders,
+        ownerId: state.ownerId,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return
