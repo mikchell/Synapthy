@@ -501,7 +501,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               position: 'absolute',
               top: 'calc(100% + 10px)',
               left: '50%',
-              transform: 'translateX(-50%)',
+              // CSSのtransformだとアニメーション(y)に上書きされて中央からずれるため、framer-motionのxで中央寄せする
+              x: '-50%',
               background: 'var(--c-glass)',
               border: `1.5px solid ${colors.border}`,
               borderRadius: 12,
