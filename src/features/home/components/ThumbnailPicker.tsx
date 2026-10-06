@@ -1,15 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ImageOff, Upload } from 'lucide-react'
+import { Upload } from 'lucide-react'
 import { useEffect } from 'react'
 import { THUMBNAIL_CATEGORIES, THUMBNAIL_TEMPLATES, findTemplate } from '../../../lib/thumbnailTemplates'
 
 interface Props {
   open: boolean
-  // 今のサムネイル（テンプレートの選択状態の表示と、「デフォルトに戻す」の出し分けに使う）
+  // 今のサムネイル（テンプレートの選択状態の表示に使う）
   thumbnailPath?: string | null
   onSelectTemplate: (id: string) => void
   onUpload: () => void
-  onReset: () => void
   onClose: () => void
 }
 
@@ -28,7 +27,7 @@ const FOOTER_BTN = {
 } as const
 
 // サムネイルを選ぶダイアログ。用意したテンプレート画像から選ぶか、自分の画像をアップロードする
-export function ThumbnailPicker({ open, thumbnailPath, onSelectTemplate, onUpload, onReset, onClose }: Props) {
+export function ThumbnailPicker({ open, thumbnailPath, onSelectTemplate, onUpload, onClose }: Props) {
   const selectedId = findTemplate(thumbnailPath)?.id
 
   useEffect(() => {
@@ -116,12 +115,6 @@ export function ThumbnailPicker({ open, thumbnailPath, onSelectTemplate, onUploa
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {thumbnailPath && (
-                  <button onClick={onReset} style={FOOTER_BTN}>
-                    <ImageOff size={14} />
-                    デフォルトに戻す
-                  </button>
-                )}
                 <button onClick={onUpload} style={FOOTER_BTN}>
                   <Upload size={14} />
                   画像をアップロード
