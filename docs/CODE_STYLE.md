@@ -39,18 +39,19 @@ src/features/<feature>/
 
 - 複数featureをまたいで使う薄いラッパー（Supabaseクライアント、APIアクセス関数、テーマ）は `src/lib/` に置く
 - 複数featureをまたいで使うReactコンポーネント・フックは `src/components/` / `src/hooks/` に置く
-- 現在は `auth` / `home` / `mindmap` の3 feature。新しいfeatureを追加する場合もこの構成に従う
+- 現在は `auth` / `home` / `mindmap` / `tutorial` の4 feature。新しいfeatureを追加する場合もこの構成に従う（`tutorial` は規模が小さいため、ストアを `store/` に分けず、feature の直下に置いている）
+- ガイドツアーの対象にする要素には `data-tour="..."` を付け、`src/features/tutorial/steps.ts` のセレクタから参照する。対象の要素を動かす・消すときは、`steps.ts` も一緒に見直す
 
 ## 命名規則
 
 - カスタムフックは `use` prefix（`useSheetsSync`, `useIsMobile`, `useAuth`）
-- Zustandストアのフックは `use<Domain>Store` / `use<Domain>`（`useMindmapStore`, `useTheme`, `useHistory`）
+- Zustandストアのフックは `use<Domain>Store` / `use<Domain>`（`useMindmapStore`, `useTutorialStore`, `useTheme`）
 - 型・インターフェースはPascalCase、ユニオン型の値はcamelCase文字列リテラル（`NodeColor = 'purple' | 'blue' | ...`）
 - イベントハンドラ・ストアアクションは動詞始まり（`addChildNode`, `moveSheetToTrash`, `toggleSheetStar`）
 
 ## 状態管理（Zustand）の方針
 
-- ドメインごとに別ストアを作る（マインドマップ本体: `mindmapStore`、テーマ: `theme.ts`、Undo/Redo: `history.ts`）。1つの巨大ストアに全部入れない
+- ドメインごとに別ストアを作る（マインドマップ本体: `mindmapStore`、ガイドツアーの進行: `tutorialStore`、テーマ: `theme.ts`）。Undo/Redo は、ストアではなく `history.ts` のモジュール変数で持つ。1つの巨大ストアに全部入れない
 - 永続化が必要なストアのみ `persist` ミドルウェアを使う。`persist` を使う場合は `partialize` で保存対象を明示し、不要な一時状態（選択中ノードIDなど）を保存しない
 - サーバー同期が必要なストアは、ストア自体にAPI呼び出しを書かず、専用のフック（`useSheetsSync` など）側でストアの変化を監視して同期する。ストアはあくまでクライアント側の状態管理に専念させる
 
@@ -63,4 +64,4 @@ src/features/<feature>/
 ## コミット・PR
 
 - Conventional Commits形式、メッセージは日本語（`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` など）
-- ブランチ運用・PRフローは `CLAUDE.md` を参照
+- ブランチ運用・PRフローは `CLAUDE.md` と `AGENTS.md` を参照

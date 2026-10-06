@@ -92,6 +92,7 @@ interface MindmapStore {
   selectedNodeId: string | null    // 選択中のノード ID
   editingNodeId: string | null     // ダブルクリックで編集中のノード ID
   isSaving: boolean                // Supabase への保存中フラグ（ヘッダーの保存インジケータ用）
+  ownerId: string | null           // この端末のキャッシュ（localStorage）の持ち主＝ログイン中のユーザーID。別の人が使うときの取り違え防止用（SECURITY.md 参照）
   // ...以下、各操作に対応するアクション群（addChildNode, moveSheetToTrash, createFolder など）
 }
 ```
@@ -136,6 +137,16 @@ Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止ま�
 
 ライト／ダークは `useTheme`（Zustand）で管理し、`localStorage`（キー: `synaptique-theme`）に保存します。未選択時は OS の `prefers-color-scheme` に追従し、実際の色は `index.css` の CSS変数が `<html data-theme="...">` に応じて切り替わります。
 
+### ユーザー情報（Supabase Auth の `user_metadata`）
+
+DBのテーブルとは別に、ガイドツアーの完了フラグを、ログイン中のユーザー自身の `user_metadata` に保存します。
+
+| キー | 型 | 説明 |
+|---|---|---|
+| `tutorialCompleted` | `boolean` | `true` のとき、ガイドツアーを自動では始めない。完了またはスキップで `true` になる |
+
+フラグが無く、登録から7日以内の人にだけ、ガイドツアーを自動で始めます（`src/features/tutorial/useTutorialAutoStart.ts`）。`user_metadata` は本人が書き換えられるため、表示の出し分けにだけ使います。
+
 ---
 
 ## localStorage（オフライン永続化）
@@ -148,7 +159,8 @@ Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止ま�
     "sheets": [ /* Sheet[]（現在開いているシートは nodes/edges を最新化して保存） */ ],
     "currentSheetId": "uuid",
     "currentView": "home",
-    "folders": [ /* Folder[] */ ]
+    "folders": [ /* Folder[] */ ],
+    "ownerId": "uuid または null"
   },
   "version": 0
 }
@@ -156,7 +168,16 @@ Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止ま�
 
 `nodes` / `edges` はトップレベルには保存されず、`sheets` 配列内の該当シートに含めて保存されます（リロード時は `onRehydrateStorage` で現在のシートから `nodes` / `edges` を復元）。
 
-テーマの選択（`synaptique-theme`）は別キーで保存されます。
+`ownerId` は、このキャッシュの持ち主（ログイン中のユーザーID）です。別の人のログイン・ログアウト・セッション切れで持ち主が変わるときは、キャッシュを初期状態に戻します（[SECURITY.md](./SECURITY.md#端末に残るキャッシュの持ち主) 参照）。
+
+### localStorage のキー一覧
+
+| キー | 保存するもの | 書き込む場所 |
+|---|---|---|
+| `synaptique-storage` | 上記のマインドマップのキャッシュ | `mindmapStore.ts`（zustand の `persist`） |
+| `synaptique-theme` | ライト／ダークの手動の選択 | `src/lib/theme.ts` |
+| `synaptique:editor-sidebar-open` | 編集画面のサイドバーを開いているか（`'false'` のとき閉じている） | `EditorSidebar.tsx` |
+| `ore-no-mindmap-storage` | 旧バージョンのキャッシュ。現在は使わず、ログイン時に削除する | `useAuth.ts` |
 
 ---
 
@@ -169,7 +190,7 @@ Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止ま�
 | `id` | `uuid` | PK（`gen_random_uuid()`） |
 | `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
 | `name` | `text` | シート名 |
-| `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[] }` |
+| `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[], ... }`（サムネイル・線の色もここに入る）。5MBまで |
 | `is_starred` | `boolean` | スター（お気に入り）フラグ |
 | `deleted_at` | `timestamptz` \| `null` | ゴミ箱に入れた日時。null なら未削除 |
 | `last_opened_at` | `timestamptz` | 最後に開いた日時 |
@@ -194,7 +215,7 @@ RLS により、ユーザーは自分の行のみ参照・作成・更新・削�
 
 ### Storage: `node-images` バケット
 
-ノードに貼り付けた画像の保存先（非公開バケット、署名付きURLで配信）。パスは `{auth.uid()}/{ファイル名}` 形式で、RLS相当のストレージポリシーにより自分のフォルダ配下のみ操作可能です。詳細は [SECURITY.md](./SECURITY.md) を参照してください。
+ノードに貼り付けた画像の保存先（非公開バケット、署名付きURLで配信）。パスは `{auth.uid()}/{ファイル名}` 形式で、RLS相当のストレージポリシーにより自分のフォルダ配下のみ操作可能です。1ファイル5MBまで、形式は WebP / PNG / JPEG / GIF のみです。詳細は [DATABASE.md](./DATABASE.md) と [SECURITY.md](./SECURITY.md) を参照してください。
 
 ### インデックス
 
@@ -233,5 +254,7 @@ Zustand ストア（nodes / edges / sheets / folders をインメモリで更新
 ゴミ箱の出し入れは、デバウンス待ち中にリロードされると未反映のまま古い状態で上書きされてしまうため、他のメタ情報の変更とは別経路で即時保存しています（`useSheetsSync.ts`）。
 
 配列から完全に消えたシート・フォルダ（ゴミ箱を空にした場合など）は `deleteSheetFromDb` / `deleteFolderFromDb` でDBからも削除されます。
+
+保存・削除は、読み込みが終わっていて、キャッシュの持ち主（`ownerId`）がログイン中のユーザーと一致しているときだけ行います。キャッシュの初期化が、DBの更新を引き起こさないための歯止めです。
 
 ログイン時は Supabase からシート・フォルダを取得し、`loadSheets()` / `loadFolders()` でストアに流し込みます（この時点の履歴を Undo の起点としてリセット）。DBが空の場合は、その時点の localStorage の内容をDBへ初期保存します。
