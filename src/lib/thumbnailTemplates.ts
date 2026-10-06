@@ -1,7 +1,7 @@
 // ホームのカードのサムネイルに使える、あらかじめ用意した画像（public/thumbnails/ に同梱）
 // sheets.data.thumbnailPath には `template:<id>` の形で保存する（Storage にはアップロードしない）
 
-export type ThumbnailCategory = 'scenery' | 'art'
+export type ThumbnailCategory = 'scenery' | 'art' | 'japan' | 'space' | 'botanical'
 
 export interface ThumbnailTemplate {
   id: string
@@ -15,6 +15,9 @@ export interface ThumbnailTemplate {
 export const THUMBNAIL_CATEGORIES: { id: ThumbnailCategory; label: string }[] = [
   { id: 'scenery', label: '風景・抽象' },
   { id: 'art', label: '名画' },
+  { id: 'japan', label: '日本美術' },
+  { id: 'space', label: '宇宙' },
+  { id: 'botanical', label: '博物画' },
 ]
 
 const PREFIX = 'template:'
@@ -37,10 +40,7 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
   t('gradient-rainbow', '虹色のグラデーション'),
   t('white-lines', '白い曲線'),
   // 名画（すべてパブリックドメイン。出典は docs/ASSETS.md）
-  t('great-wave', '神奈川沖浪裏（葛飾北斎）', 'art'),
-  t('red-fuji', '凱風快晴（葛飾北斎）', 'art'),
-  t('sudden-shower', '大はしあたけの夕立（歌川広重）', 'art', 'center 30%'),
-  t('starry-night-vangogh', '星月夜（ゴッホ）', 'art'),
+    t('starry-night-vangogh', '星月夜（ゴッホ）', 'art'),
   t('sunflowers', 'ひまわり（ゴッホ）', 'art'),
   t('water-lilies', '睡蓮（モネ）', 'art'),
   t('impression-sunrise', '印象・日の出（モネ）', 'art'),
@@ -49,6 +49,42 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
   t('birth-of-venus', 'ヴィーナスの誕生（ボッティチェリ）', 'art'),
   t('grande-jatte', 'グランド・ジャット島の日曜日の午後（スーラ）', 'art'),
   t('fighting-temeraire', '戦艦テメレール号（ターナー）', 'art'),
+  // 日本美術（すべてパブリックドメインまたはCC0）
+  t('great-wave', '神奈川沖浪裏（葛飾北斎）', 'japan'),
+  t('red-fuji', '凱風快晴（葛飾北斎）', 'japan'),
+  t('kajikazawa', '甲州石班沢（葛飾北斎）', 'japan'),
+  t('ejiri', '駿州江尻（葛飾北斎）', 'japan'),
+  t('goten-yama', '東海道品川御殿山の不二（葛飾北斎）', 'japan'),
+  t('poppies', 'ケシ（葛飾北斎）', 'japan'),
+  t('sudden-shower', '大はしあたけの夕立（歌川広重）', 'japan', 'center 30%'),
+  t('kameido-plum', '亀戸梅屋舗（歌川広重）', 'japan', 'center 40%'),
+  t('ryogoku-fireworks', '両国花火（歌川広重）', 'japan', 'center 8%'),
+  t('kanbara-snow', '蒲原 夜之雪（歌川広重）', 'japan'),
+  t('irises-korin', '燕子花図（尾形光琳）', 'japan'),
+  t('plum-korin', '紅白梅図屏風（尾形光琳）', 'japan'),
+  t('wind-thunder-gods', '風神雷神図屏風（俵屋宗達）', 'japan'),
+  // 宇宙（NASAの画像。すべてパブリックドメイン）
+  t('earthrise', '地球の出（アポロ8号）', 'space'),
+  t('blue-marble', 'ブルー・マーブル（アポロ17号）', 'space'),
+  t('pillars-of-creation', '創造の柱（ハッブル）', 'space'),
+  t('orion-nebula', 'オリオン大星雲（ハッブル）', 'space'),
+  t('crab-nebula', 'かに星雲（ハッブル）', 'space'),
+  t('sombrero-galaxy', 'ソンブレロ銀河（ハッブル）', 'space'),
+  t('whirlpool-galaxy', '子持ち銀河（ハッブル）', 'space'),
+  t('cosmic-cliffs', 'カリーナ星雲の宇宙の崖（ウェッブ）', 'space'),
+  t('saturn', '土星（カッシーニ）', 'space'),
+  t('jupiter', '木星（ボイジャー1号）', 'space'),
+  // 博物画（すべてパブリックドメイン）
+  t('hummingbirds', 'ハチドリ（ヘッケル）', 'botanical'),
+  t('jellyfish', 'クラゲ（ヘッケル）', 'botanical'),
+  t('sea-anemones', 'イソギンチャク（ヘッケル）', 'botanical'),
+  t('pitcher-plants', 'ウツボカズラ（ヘッケル）', 'botanical'),
+  t('bats', 'コウモリ（ヘッケル）', 'botanical'),
+  t('siphonophores', 'クダクラゲ（ヘッケル）', 'botanical'),
+  t('corals', 'サンゴ（ヘッケル）', 'botanical'),
+  t('flamingo', 'アメリカフラミンゴ（オーデュボン）', 'botanical', 'center 10%'),
+  t('banana-merian', 'バナナの花と実（メリアン）', 'botanical'),
+  t('insects-merian', '昆虫の変態（メリアン）', 'botanical'),
 ]
 
 export const toTemplatePath = (id: string) => `${PREFIX}${id}`
