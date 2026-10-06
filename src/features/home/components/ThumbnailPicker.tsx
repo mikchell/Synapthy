@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ImageOff, Upload } from 'lucide-react'
 import { useEffect } from 'react'
-import { THUMBNAIL_TEMPLATES, findTemplate } from '../../../lib/thumbnailTemplates'
+import { THUMBNAIL_CATEGORIES, THUMBNAIL_TEMPLATES, findTemplate } from '../../../lib/thumbnailTemplates'
 
 interface Props {
   open: boolean
@@ -74,36 +74,45 @@ export function ThumbnailPicker({ open, thumbnailPath, onSelectTemplate, onUploa
             >
               <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>サムネイルを選ぶ</p>
 
-              <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-                {THUMBNAIL_TEMPLATES.map((tpl) => {
-                  const active = tpl.id === selectedId
-                  return (
-                    <button
-                      key={tpl.id}
-                      onClick={() => onSelectTemplate(tpl.id)}
-                      title={tpl.label}
-                      style={{
-                        padding: 0,
-                        border: 'none',
-                        borderRadius: 12,
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        background: 'var(--c-bg-subtle)',
-                        boxShadow: active ? '0 0 0 3px var(--c-accent)' : '0 0 0 1px var(--c-border)',
-                        position: 'relative',
-                        aspectRatio: '16 / 10',
-                      }}
-                    >
-                      <img
-                        src={tpl.src}
-                        alt={tpl.label}
-                        loading="lazy"
-                        draggable={false}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      />
-                    </button>
-                  )
-                })}
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {THUMBNAIL_CATEGORIES.map((cat) => (
+                  <div key={cat.id}>
+                    <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--c-text-3)' }}>
+                      {cat.label}
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                      {THUMBNAIL_TEMPLATES.filter((tpl) => tpl.category === cat.id).map((tpl) => {
+                        const active = tpl.id === selectedId
+                        return (
+                          <button
+                            key={tpl.id}
+                            onClick={() => onSelectTemplate(tpl.id)}
+                            title={tpl.label}
+                            style={{
+                              padding: 0,
+                              border: 'none',
+                              borderRadius: 12,
+                              overflow: 'hidden',
+                              cursor: 'pointer',
+                              background: 'var(--c-bg-subtle)',
+                              boxShadow: active ? '0 0 0 3px var(--c-accent)' : '0 0 0 1px var(--c-border)',
+                              position: 'relative',
+                              aspectRatio: '16 / 10',
+                            }}
+                          >
+                            <img
+                              src={tpl.src}
+                              alt={tpl.label}
+                              loading="lazy"
+                              draggable={false}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: tpl.position, display: 'block' }}
+                            />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
