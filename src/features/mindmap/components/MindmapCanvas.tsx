@@ -20,6 +20,7 @@ import { Header } from './Header'
 import { MindmapNode } from './MindmapNode'
 import { ImageNode } from './ImageNode'
 import { InteractiveEdge } from './InteractiveEdge'
+import { safeLineColor } from '../edgeColor'
 import { NodePanel } from './NodePanel'
 import { Toolbar } from './Toolbar'
 import { HelpHint } from './HelpHint'
@@ -54,6 +55,9 @@ function MindmapFlow() {
       }))
     )
   const { setCenter, getZoom, setViewport, getViewport, screenToFlowPosition } = useReactFlow()
+  // シートで設定した線の色。CSS変数として渡し、線（InteractiveEdge）はその変数を参照する
+  // （framer-motion の SVG はスタイルの stroke をマウント時の値で固定してしまい、あとから色を変えても反映されないため）
+  const lineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor))
   const isMobile = useIsMobile()
   const containerRef = useRef<HTMLDivElement>(null)
   const twoFingerRef = useRef<{ midX: number; midY: number; vx: number; vy: number } | null>(null)
@@ -176,7 +180,10 @@ function MindmapFlow() {
   }, [isMobile, getViewport, setViewport])
 
   return (
-    <div ref={containerRef} style={{ width: '100vw', height: '100vh', paddingTop: 56 }}>
+    <div
+      ref={containerRef}
+      style={{ width: '100vw', height: '100vh', paddingTop: 56, ...(lineColor ? ({ '--c-sheet-line': lineColor } as React.CSSProperties) : {}) }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
