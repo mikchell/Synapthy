@@ -4,6 +4,7 @@
 
 - **Google OAuth（Supabase Auth）** — `src/features/auth/useAuth.ts` の `signInWithGoogle()` で `supabase.auth.signInWithOAuth({ provider: 'google' })` を呼び出す。他の認証方法は提供していない。
 - セッションは Supabase クライアント（`src/lib/supabase.ts`）が管理し、`onAuthStateChange` で状態変化をフックする。
+- ガイドツアーの完了フラグは、Supabase のユーザー情報（`user_metadata.tutorialCompleted`）に `supabase.auth.updateUser` で保存する（`src/features/tutorial/tutorialStore.ts`）。`user_metadata` はユーザー自身が書き換えられるため、権限や課金などの判断には使わない（表示を出し分けるだけの値に限る）
 - ログアウト時（`signOut()`）は Supabase 側のセッション破棄に加え、ローカルの Zustand 永続化ストレージ（`useMindmapStore.persist.clearStorage()`）も明示的に消去する。共有端末でログアウト後も前のユーザーのマインドマップが残らないようにするための対応。
 
 ## データアクセス制御（RLS）
