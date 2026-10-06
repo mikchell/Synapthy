@@ -2,10 +2,10 @@
 
 ## サムネイルのテンプレート画像（`public/thumbnails/`）
 
-ホームのカードのサムネイルに選べる画像です。[Unsplash](https://unsplash.com/) の画像を、長辺 640px・JPEG に縮小して同梱しています。
+ホームのカードのサムネイルに選べる画像です。[Unsplash](https://unsplash.com/) の画像を、長辺 1280px・JPEG（品質 78）に縮小して同梱しています。ホームのカードは最大 480px 幅で表示され、高解像度の画面では約 960px 分の画素が必要なため、粗く見えない大きさにしています。
 
 - ライセンス: [Unsplash License](https://unsplash.com/license)（商用利用可・帰属表示は不要。ただし画像そのものを主たる価値とする再配布・販売は不可）
-- 取得元: `https://images.unsplash.com/photo-<元画像ID>`（撮影者名はファイルの取得時に記録していないため、出典は元画像IDのみ）
+- 取得元: `https://images.unsplash.com/photo-<元画像ID>`（`?w=1280&q=78&fm=jpg&fit=max` を付けると、この大きさで取得できる。縦長の画像は `w=853`）（撮影者名はファイルの取得時に記録していないため、出典は元画像IDのみ）
 - 画像の読み込みは同梱ファイルのみ。外部サイトの URL は参照しない
 
 | ファイル | 内容 | 元画像ID |
@@ -97,6 +97,6 @@ NASA の画像は、原則として米国政府の著作物でパブリックド
 
 ## テンプレートを追加するには
 
-1. 画像を長辺 640px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
+1. 画像を長辺 1280px 程度の JPEG にして `public/thumbnails/<id>.jpg` に置く
 2. `src/lib/thumbnailTemplates.ts` の `THUMBNAIL_TEMPLATES` に `t('<id>', '表示名')`（名画は第3引数にカテゴリ（`'art'`、`'watercolor'`、`'japan'`、`'space'`）、切り抜きの位置を変えたいときは第4引数に `'center 20%'` など）を追加する
 3. この表に出典を追記する
