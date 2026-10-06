@@ -66,6 +66,7 @@ interface Sheet {
   mapType?: MapType                // 'linear' | 'free'（省略時は 'linear' とみなす）
   nodes: Node<AnyNodeData>[]       // @xyflow/react の Node 型
   edges: Edge[]                    // @xyflow/react の Edge 型
+  loaded?: boolean                 // ノードの中身を読み込んでいるか。false は中身が空で、DBに書き込んではいけない。未設定は読み込み済み（下の「遅延読み込み」を参照）
   lineColor?: string | null        // このシートの線の色（edgeColor.ts の LINE_COLORS のいずれか）。未設定は null（テーマの色）。sheets.data の JSONB に保存
   thumbnailPath?: string | null    // ホームのカードのサムネイル画像の Storage パス。未設定は null（シートIDから決めるパステルカラーを表示）。`template:<id>` は同梱のテンプレート画像（`public/thumbnails/`、Storage には保存しない）。sheets.data の JSONB に保存
   isStarred: boolean               // スター（お気に入り）
@@ -261,4 +262,17 @@ Zustand ストア（nodes / edges / sheets / folders をインメモリで更新
 
 保存・削除は、読み込みが終わっていて、キャッシュの持ち主（`ownerId`）がログイン中のユーザーと一致しているときだけ行います。キャッシュの初期化が、DBの更新を引き起こさないための歯止めです。
 
-ログイン時は Supabase からシート・フォルダを取得し、`loadSheets()` / `loadFolders()` でストアに流し込みます（この時点の履歴を Undo の起点としてリセット）。DBが空の場合は、その時点の localStorage の内容をDBへ初期保存します。
+ログイン時は Supabase から、シートの**軽い項目**（名前・スター・ごみ箱・最終使用日時・フォルダ・サムネイル・線の色・マップの種類）とフォルダだけを取得し、`loadSheets()` / `loadFolders()` でストアに流し込みます（この時点の履歴を Undo の起点としてリセット）。ノードの中身（`nodes` / `edges`）は取得しません。DBが空の場合は、その時点の localStorage の内容をDBへ初期保存します。
+
+### シートの中身の遅延読み込み
+
+シートを多く持つアカウントで、ログインのたびに全シートの中身を転送しないよう、ノードの中身は**編集画面でシートを開くときに、そのシート1枚分だけ**取得します（`sheetLoader.ts` の `useCurrentSheetLoader`）。
+
+- 中身を読み込んでいないシートは、`loaded: false` で、`nodes` / `edges` が空。読み込み済みのシート（`loaded` が未設定の、この仕組みの導入前の端末のキャッシュを含む）と区別する（`isSheetLoaded()`）
+- 取得するのは、ログイン中のユーザーのデータの読み込みが終わっていて、編集画面で、未読み込みのシートを開いているときだけ。取得中は、キャンバスの代わりに「読み込み中」の画面（`SheetLoadScreen`）を出す。取得に失敗したときは、「再読み込み」と「ホームへ戻る」を出す
+- 取得中に別のシートへ切り替えたときは、古い結果を捨てる（別のシートの上に出てしまわないように）
+- 取り込み後は、`resetHistory()` で「元に戻す」の起点にする（空のキャンバスには戻らない）
+- **読み込んでいないシートの中身は、DBに書き込まない**（空で上書きして、消してしまうため）。保存は `saveSheets()` が振り分ける。読み込み済みのシートは行全体を `upsert` し、未読み込みのシートは `updateSheetMeta()` で、名前・スター・ごみ箱・最終使用日時・フォルダの列だけを更新する。`upsertSheet()` も、未読み込みのシートを渡されたら拒否する（最後の安全網）。ノードの自動保存も、現在のシートが未読み込みなら何もしない
+- サムネイルと線の色は `sheets.data` の中にあるので、未読み込みのシートでは列だけの更新では保存できない。ホームのカードからサムネイルを変えるときは、先に `ensureSheetContent()` で中身を読み込む
+- 完全削除では、画像の保存場所を調べるために中身が要る。シートを消す**前に**、未読み込みのシートの中身を取得して集める（`collectSheetImagePaths()`）。取得できなかったときは、画像の掃除をあきらめて、削除は進める
+- DB側では、`data`（JSONB）の中の項目を、PostgREST の `別名:data->>キー` で取り出している（`SHEET_META_COLUMNS`）。転送量は減るが、DB が `data` を読む処理は残る。さらに軽くするなら、`mapType` / `thumbnailPath` / `lineColor` を専用の列に出す（未対応）

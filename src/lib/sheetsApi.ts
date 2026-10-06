@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Folder, Sheet } from '../features/mindmap/store/mindmapStore'
+import { isSheetLoaded, planSheetWrites, sheetFromMetaRow, SHEET_META_COLUMNS, type SheetMetaRow } from './sheetLoad'
 
 interface DbSheetMeta {
   id: string
@@ -15,15 +16,16 @@ interface DbSheet extends DbSheetMeta {
   folder_id: string | null
 }
 
-// シートのメタデータのみ取得（軽量）
-export async function fetchSheetsMeta(): Promise<Pick<Sheet, 'id' | 'name'>[]> {
+// シートの軽い項目（名前・スター・フォルダ・サムネイルなど）だけを取得する（初回ロード用）
+// ノードの中身（data）は取得しない。各シートは、中身が空で、loaded が false の状態になる
+export async function fetchSheetsMeta(): Promise<Sheet[]> {
   const { data, error } = await supabase
     .from('sheets')
-    .select('id, name')
+    .select(SHEET_META_COLUMNS)
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return data as DbSheetMeta[]
+  return (data as unknown as SheetMetaRow[]).map(sheetFromMetaRow)
 }
 
 // 特定シートのデータ（nodes/edges）を取得
@@ -41,33 +43,32 @@ export async function fetchSheetData(
   return { nodes: d.nodes ?? [], edges: d.edges ?? [] }
 }
 
-// 全シートをまとめて取得（初回ロード用）
-export async function fetchSheets(): Promise<Sheet[]> {
-  const { data, error } = await supabase
-    .from('sheets')
-    .select('id, name, data, is_starred, deleted_at, last_opened_at, updated_at, folder_id')
-    .order('created_at', { ascending: true })
-
-  if (error) throw error
-
-  return (data as DbSheet[]).map((s) => ({
-    id: s.id,
-    name: s.name,
-    mapType: s.data?.mapType,
-    thumbnailPath: s.data?.thumbnailPath ?? null,
-    lineColor: s.data?.lineColor ?? null,
-    nodes: s.data?.nodes ?? [],
-    edges: s.data?.edges ?? [],
-    isStarred: s.is_starred,
-    deletedAt: s.deleted_at,
-    lastOpenedAt: s.last_opened_at,
-    updatedAt: s.updated_at,
-    folderId: s.folder_id,
-  }))
+// 複数シートのノードの中身を、まとめて取得する（完全削除の前に、画像の保存場所を調べるため）
+export async function fetchSheetsContent(
+  ids: string[]
+): Promise<Map<string, Pick<Sheet, 'nodes' | 'edges'>>> {
+  const result = new Map<string, Pick<Sheet, 'nodes' | 'edges'>>()
+  const CHUNK_SIZE = 10 // 1回の応答が大きくなりすぎないよう、分けて取得する
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const { data, error } = await supabase
+      .from('sheets')
+      .select('id, data')
+      .in('id', ids.slice(i, i + CHUNK_SIZE))
+    if (error) throw error
+    for (const row of data as { id: string; data: DbSheet['data'] }[]) {
+      result.set(row.id, { nodes: row.data?.nodes ?? [], edges: row.data?.edges ?? [] })
+    }
+  }
+  return result
 }
 
 // 単一シートをupsert（user_idはDBトリガーでauth.uid()を自動セット、updated_atはDBトリガーが自動更新）
+// ノードの中身を含む行全体を書き込むので、読み込んでいないシート（中身が空）を渡されたら拒否する
+// （空で上書きして、データを消してしまわないための最後の安全網。保存の振り分けは saveSheets が行う）
 export async function upsertSheet(sheet: Sheet): Promise<void> {
+  if (!isSheetLoaded(sheet)) {
+    throw new Error('中身を読み込んでいないシートは、全体を保存できません')
+  }
   const { error } = await supabase.from('sheets').upsert(
     {
       id: sheet.id,
@@ -89,6 +90,33 @@ export async function upsertSheetsBatch(sheets: Sheet[]): Promise<void> {
   for (let i = 0; i < sheets.length; i += BATCH_SIZE) {
     const batch = sheets.slice(i, i + BATCH_SIZE)
     await Promise.all(batch.map((s) => upsertSheet(s)))
+  }
+}
+
+// 読み込んでいないシートの、名前・スター・ごみ箱・最終使用日時・フォルダの変更だけを保存する
+// data 列（ノードの中身）には触れない。サムネイルと線の色は data の中にあるので、ここでは保存できない
+// （それらを変えるシートは、先に中身を読み込んでおく）
+export async function updateSheetMeta(sheet: Sheet): Promise<void> {
+  const { error } = await supabase
+    .from('sheets')
+    .update({
+      name: sheet.name,
+      is_starred: sheet.isStarred,
+      deleted_at: sheet.deletedAt,
+      last_opened_at: sheet.lastOpenedAt,
+      folder_id: sheet.folderId,
+    })
+    .eq('id', sheet.id)
+  if (error) throw error
+}
+
+// シートを保存する。読み込み済みのシートは行全体を、読み込んでいないシートは列だけを保存する
+export async function saveSheets(sheets: Sheet[]): Promise<void> {
+  const { full, metaOnly } = planSheetWrites(sheets)
+  await upsertSheetsBatch(full)
+  const BATCH_SIZE = 5
+  for (let i = 0; i < metaOnly.length; i += BATCH_SIZE) {
+    await Promise.all(metaOnly.slice(i, i + BATCH_SIZE).map((s) => updateSheetMeta(s)))
   }
 }
 

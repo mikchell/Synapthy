@@ -3,16 +3,18 @@ import type { User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { useMindmapStore, type Folder, type Sheet } from '../store/mindmapStore'
 import { resetHistory } from '../history'
+import { useSheetLoadStatus } from '../sheetLoader'
 import {
-  fetchSheets,
+  fetchSheetsMeta,
   upsertSheet,
-  upsertSheetsBatch,
+  saveSheets,
   deleteSheetFromDb,
   fetchFolders,
   upsertFoldersBatch,
   deleteFolderFromDb,
 } from '../../../lib/sheetsApi'
 import { limitKindOf, notifyLimit } from '../../../lib/limits'
+import { isSheetLoaded } from '../../../lib/sheetLoad'
 
 const NODE_DEBOUNCE_MS = 1000   // ノード・エッジ変更の保存間隔
 const SHEET_DEBOUNCE_MS = 2000  // シートメタ変更の保存間隔
@@ -56,9 +58,12 @@ export function useSheetsSync(user: User | null) {
   const canSync = () => initializedRef.current && !!user && ownerId === user.id
 
   // ログイン時にSupabaseからシート・フォルダを読み込む
+  // シートは、名前・スター・フォルダ・サムネイルなどの軽い項目だけを取得する。ノードの中身は、シートを開くときに取得する
+  // （sheetLoader.ts）。読み込んでいないシートの中身は空なので、DBへ書き込まない（saveSheets が列だけを更新する）
   useEffect(() => {
     if (!user) {
       initializedRef.current = false
+      useSheetLoadStatus.setState({ ready: false })
       prevSheetIdsRef.current = []
       prevFolderIdsRef.current = []
       return
@@ -66,9 +71,10 @@ export function useSheetsSync(user: User | null) {
 
     // 別のユーザーに切り替わったときは、そのユーザーのデータを読み込み終えるまで保存しない
     initializedRef.current = false
+    useSheetLoadStatus.setState({ ready: false })
     const userId = user.id
 
-    Promise.all([fetchSheets(), fetchFolders()])
+    Promise.all([fetchSheetsMeta(), fetchFolders()])
       .then(([fetchedSheets, fetchedFolders]) => {
         // 読み込み中にログイン中のユーザーが変わっていたら、古い結果は使わない
         if (useMindmapStore.getState().ownerId !== userId) return
@@ -87,7 +93,7 @@ export function useSheetsSync(user: User | null) {
           )
           prevSheetIdsRef.current = toSave.map((s) => s.id)
           prevMetaRef.current = Object.fromEntries(toSave.map((s) => [s.id, metaKeyOf(s)]))
-          upsertSheetsBatch(toSave).catch((e) => notifySaveError(e, 'シートの保存に失敗しました'))
+          saveSheets(toSave).catch((e) => notifySaveError(e, 'シートの保存に失敗しました'))
         }
 
         if (fetchedFolders.length > 0) {
@@ -104,6 +110,7 @@ export function useSheetsSync(user: User | null) {
         }
 
         initializedRef.current = true
+        useSheetLoadStatus.setState({ ready: true })
       })
       .catch(() => toast.error('データの読み込みに失敗しました'))
   }, [user?.id])
@@ -115,6 +122,8 @@ export function useSheetsSync(user: User | null) {
     const { sheets: s, currentSheetId } = useMindmapStore.getState()
     const currentSheet = s.find((sh) => sh.id === currentSheetId)
     if (!currentSheet) return
+    // 中身を読み込んでいないシートは保存しない（空のノードで上書きして、データを消してしまうため）
+    if (!isSheetLoaded(currentSheet)) return
 
     setIsSaving(true)
     if (nodeTimerRef.current) clearTimeout(nodeTimerRef.current)
@@ -162,7 +171,7 @@ export function useSheetsSync(user: User | null) {
         const payload = trashChanged.map((s) =>
           s.id === currentSheetId ? { ...s, nodes: n, edges: e } : s
         )
-        upsertSheetsBatch(payload)
+        saveSheets(payload)
           .then(() => {
             setIsSaving(false)
             payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))
@@ -177,7 +186,7 @@ export function useSheetsSync(user: User | null) {
           const payload = otherChanged.map((s) =>
             s.id === currentSheetId ? { ...s, nodes: n, edges: e } : s
           )
-          upsertSheetsBatch(payload)
+          saveSheets(payload)
             .then(() => {
               setIsSaving(false)
               payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))

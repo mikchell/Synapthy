@@ -1,6 +1,8 @@
 import type { Node } from '@xyflow/react'
 import { supabase } from './supabase'
 import { imageTooLargeMessage, LIMITS, limitMessage } from './limits'
+import { isSheetLoaded } from './sheetLoad'
+import { fetchSheetsContent } from './sheetsApi'
 import { isTemplatePath } from './thumbnailTemplates'
 import type { AnyNodeData, ImageNodeData, MindmapNodeData, Sheet } from '../features/mindmap/store/mindmapStore'
 
@@ -150,4 +152,22 @@ export function getImagePaths(nodes: Node<AnyNodeData>[]): string[] {
 export function getSheetImagePaths(sheet: Pick<Sheet, 'nodes' | 'thumbnailPath'>): string[] {
   const paths = getImagePaths(sheet.nodes)
   return sheet.thumbnailPath ? [...paths, sheet.thumbnailPath] : paths
+}
+
+// 完全削除の前に、複数のシートが参照しているストレージパスを集める
+// 読み込んでいないシートは、ノードの中身が空なので、中身を取得して調べる
+// （取得できなかったシートは、分かっている分（サムネイル）だけ。画像の掃除はあきらめて、削除は進める）
+export async function collectSheetImagePaths(sheets: Sheet[]): Promise<string[]> {
+  const unloadedIds = sheets.filter((s) => !isSheetLoaded(s)).map((s) => s.id)
+  let contents = new Map<string, Pick<Sheet, 'nodes' | 'edges'>>()
+  if (unloadedIds.length > 0) {
+    try {
+      contents = await fetchSheetsContent(unloadedIds)
+    } catch {
+      // 取得できなかったときは、ノードの画像を調べずに進める
+    }
+  }
+  return sheets.flatMap((s) =>
+    getSheetImagePaths(isSheetLoaded(s) ? s : { ...s, nodes: contents.get(s.id)?.nodes ?? [] })
+  )
 }

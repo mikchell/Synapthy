@@ -5,8 +5,9 @@ import { toast } from 'sonner'
 import { useMindmapStore, type Sheet } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
-import { deleteNodeImage, deleteNodeImages, getSheetImagePaths, uploadThumbnailImage } from '../../../lib/imageApi'
+import { collectSheetImagePaths, deleteNodeImage, deleteNodeImages, uploadThumbnailImage } from '../../../lib/imageApi'
 import { LIMITS } from '../../../lib/limits'
+import { ensureSheetContent } from '../../mindmap/sheetLoader'
 import { toTemplatePath } from '../../../lib/thumbnailTemplates'
 import { MapThumbnail } from './MapThumbnail'
 import { ThumbnailPicker } from './ThumbnailPicker'
@@ -97,6 +98,8 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
     e.target.value = ''
     if (!file) return
     try {
+      // サムネイルはシートの data の中に保存される。中身を読み込んでいないシートは、先に読み込んでおく
+      await ensureSheetContent(sheet.id)
       const previous = sheet.thumbnailPath
       const path = await uploadThumbnailImage(file)
       setSheetThumbnail(sheet.id, path)
@@ -108,8 +111,14 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
   }
 
   // 用意したテンプレート画像をサムネイルにする。前のサムネイルが自分の画像ならストレージから削除する
-  const handleTemplateSelected = (id: string) => {
+  const handleTemplateSelected = async (id: string) => {
     const previous = sheet.thumbnailPath
+    try {
+      await ensureSheetContent(sheet.id)
+    } catch {
+      toast.error('サムネイルの変更に失敗しました')
+      return
+    }
     setSheetThumbnail(sheet.id, toTemplatePath(id))
     if (previous) deleteNodeImage(previous).catch(() => {})
     setPickerOpen(false)
@@ -322,10 +331,11 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
         title="完全に削除しますか？"
         description={`「${sheet.name}」を完全に削除します。この操作は取り消せません。`}
         confirmLabel="完全に削除"
-        onConfirm={() => {
+        onConfirm={async () => {
           setConfirmOpen(false)
+          // 画像の保存場所は、シートを消す前に集める（中身を読み込んでいないシートは、中身を取得して調べる）
+          const imagePaths = await collectSheetImagePaths([sheet])
           permanentlyDeleteSheet(sheet.id)
-          const imagePaths = getSheetImagePaths(sheet)
           if (imagePaths.length > 0) deleteNodeImages(imagePaths).catch(() => {})
         }}
         onCancel={() => setConfirmOpen(false)}

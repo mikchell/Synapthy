@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { useShallow } from 'zustand/react/shallow'
 import { useMindmapStore } from '../store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
+import { isSheetLoaded } from '../../../lib/sheetLoad'
 import { processAndUploadImage } from '../../../lib/imageApi'
 import { attachImageToNode, isRootNode } from '../nodeImage'
 import { redo, undo } from '../history'
@@ -26,6 +27,7 @@ import { displayTextColor } from '../labelStyle'
 import { NodePanel } from './NodePanel'
 import { Toolbar } from './Toolbar'
 import { HelpHint } from './HelpHint'
+import { SheetLoadScreen } from './SheetLoadScreen'
 
 const nodeTypes = { mindmapNode: MindmapNode, imageNode: ImageNode }
 const edgeTypes = { interactive: InteractiveEdge, default: InteractiveEdge }
@@ -248,6 +250,14 @@ function MindmapFlow() {
 }
 
 export function MindmapCanvas() {
+  // 開いているシートの中身を読み込み終えるまでは、キャンバスを出さない
+  // （空のキャンバスを編集されて、あとから取得した中身に置き換わってしまわないように。書き出しなども使えなくなる）
+  const loaded = useMindmapStore((s) => {
+    const current = s.sheets.find((sh) => sh.id === s.currentSheetId)
+    return !current || isSheetLoaded(current)
+  })
+  if (!loaded) return <SheetLoadScreen />
+
   return (
     <ReactFlowProvider>
       <MindmapFlow />
