@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
 import { LIMITS, notifyLimit } from '../../../lib/limits'
+import { NameInput } from '../../../components/NameInput'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { SynapthyIcon, WORDMARK_COLOR } from '../../../components/SynapthyIcon'
@@ -102,10 +103,12 @@ function FolderRow({
       {editing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', width: '100%' }}>
           <FolderIcon size={16} color="var(--c-text-3)" />
-          <input
+          <NameInput
             ref={inputRef}
             value={draft}
-            maxLength={LIMITS.folderNameLength}
+            max={LIMITS.folderNameLength}
+            label="フォルダ名"
+            wrapperStyle={{ flex: 1, minWidth: 0 }}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -113,8 +116,7 @@ function FolderRow({
               if (e.key === 'Escape') { setDraft(folder.name); setEditing(false) }
             }}
             style={{
-              flex: 1,
-              minWidth: 0,
+              width: '100%',
               fontSize: 13,
               fontWeight: 500,
               border: '1px solid rgba(124,58,237,0.4)',
@@ -264,10 +266,12 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
         {addingFolder && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
             <FolderIcon size={16} color="var(--c-text-3)" />
-            <input
+            <NameInput
               ref={newFolderInputRef}
               value={newFolderName}
-              maxLength={LIMITS.folderNameLength}
+              max={LIMITS.folderNameLength}
+              label="フォルダ名"
+              wrapperStyle={{ flex: 1, minWidth: 0 }}
               onChange={(e) => setNewFolderName(e.target.value)}
               onBlur={commitNewFolder}
               onKeyDown={(e) => {
@@ -276,8 +280,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
               }}
               placeholder="フォルダ名"
               style={{
-                flex: 1,
-                minWidth: 0,
+                width: '100%',
                 fontSize: 13,
                 border: '1px solid rgba(124,58,237,0.4)',
                 borderRadius: 6,

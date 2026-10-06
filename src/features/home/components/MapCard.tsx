@@ -7,6 +7,7 @@ import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { collectSheetImagePaths, deleteNodeImage, deleteNodeImages, uploadThumbnailImage } from '../../../lib/imageApi'
 import { LIMITS } from '../../../lib/limits'
+import { NameInput } from '../../../components/NameInput'
 import { ensureSheetContent } from '../../mindmap/sheetLoader'
 import { toTemplatePath } from '../../../lib/thumbnailTemplates'
 import { MapThumbnail } from './MapThumbnail'
@@ -178,10 +179,12 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
 
         <div style={{ padding: isList ? '0 16px' : '10px 12px 12px', flex: 1, minWidth: 0 }}>
           {editing ? (
-            <input
+            <NameInput
               ref={inputRef}
               value={draft}
-              maxLength={LIMITS.sheetNameLength}
+              max={LIMITS.sheetNameLength}
+              label="シート名"
+              wrapperStyle={{ width: '100%' }}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commitRename}
               onKeyDown={(e) => {
