@@ -61,7 +61,7 @@ export const THUMBNAIL_TEMPLATES: ThumbnailTemplate[] = [
   t('durer-turf', '大きな芝草（デューラー）', 'watercolor'),
   t('constable-borrowdale', 'ボローデール、晴れた日の夕べ（コンスタブル）', 'watercolor'),
   t('girtin-findlater', 'フィンドレイター城（ガーティン）', 'watercolor'),
-  t('klee-strict-landscape', '青の厳格な風景（クレー）', 'watercolor'),
+  t('signac-la-rochelle', 'ラ・ロシェル港の入口（シニャック）', 'watercolor'),
   // 日本美術（すべてパブリックドメインまたはCC0）
   t('great-wave', '神奈川沖浪裏（葛飾北斎）', 'japan'),
   t('red-fuji', '凱風快晴（葛飾北斎）', 'japan'),

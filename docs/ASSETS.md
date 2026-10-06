@@ -59,7 +59,7 @@
 | `durer-turf.jpg` | 大きな芝草 | アルブレヒト・デューラー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Albrecht_D%C3%BCrer_-_The_Large_Piece_of_Turf,_1503_-_Google_Art_Project.jpg) |
 | `constable-borrowdale.jpg` | ボローデール、晴れた日の夕べ | ジョン・コンスタブル | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:John_Constable_-_Borrowdale-_Evening_after_a_Fine_Day,_1_October_1806_-_Google_Art_Project.jpg) |
 | `girtin-findlater.jpg` | フィンドレイター城 | トーマス・ガーティン | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Thomas_Girtin_-_Findlater_Castle,_Banff_-_Google_Art_Project.jpg) |
-| `klee-strict-landscape.jpg` | 青の厳格な風景 | パウル・クレー | Public domain | [Commons](https://commons.wikimedia.org/wiki/File:Paul_Klee_Strenge_Landschaft_in_Blau_1917.jpeg) |
+| `signac-la-rochelle.jpg` | ラ・ロシェル港の入口 | ポール・シニャック | CC0 | [Commons](https://commons.wikimedia.org/wiki/File:Entrance_to_the_Harbor_of_La_Rochelle_MET_DP812183.jpg) |
 
 ### 日本美術（パブリックドメイン / CC0）
 
