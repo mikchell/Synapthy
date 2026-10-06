@@ -95,6 +95,18 @@ export function remapSpans(oldLabel: string, newLabel: string, spans: LabelSpan[
   return result.length > 0 ? result : undefined
 }
 
+// 範囲の太字・色（ツールバーで「いま選んでいる範囲がどの装飾か」を表示するため）
+// 範囲の中で装飾が揃っていなければ、bold は null、color は null（＝混ざっている）にする
+export function rangeStyle(label: string, spans: LabelSpan[] | undefined, start: number, end: number): { bold: boolean | null; color: string | undefined | null } {
+  const range = toCharStyles(label.length, spans).slice(Math.max(0, start), Math.max(0, end))
+  if (range.length === 0) return { bold: false, color: undefined }
+  const first = range[0]
+  return {
+    bold: range.every((c) => !!c.bold === !!first.bold) ? !!first.bold : null,
+    color: range.every((c) => c.color === first.color) ? first.color : null,
+  }
+}
+
 // 範囲に太字を付ける。範囲がすべて太字なら外す
 export function toggleBold(label: string, spans: LabelSpan[] | undefined, start: number, end: number): LabelSpan[] | undefined {
   const chars = toCharStyles(label.length, spans)
