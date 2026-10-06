@@ -89,12 +89,13 @@ const DIRECTION_ANGLE: Record<FreeDirection, number> = {
 }
 
 function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<Node<MindmapNodeData>>) {
-  const { addChildNode, addSiblingNode, addChildNodeInDirection, commitNodeLabel, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
+  const { addChildNode, addSiblingNode, addChildNodeInDirection, commitNodeLabel, updateNodeTextStyle, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
     useShallow((s) => ({
       addChildNode: s.addChildNode,
       addSiblingNode: s.addSiblingNode,
       addChildNodeInDirection: s.addChildNodeInDirection,
       commitNodeLabel: s.commitNodeLabel,
+      updateNodeTextStyle: s.updateNodeTextStyle,
       deleteNode: s.deleteNode,
       setSelectedNodeId: s.setSelectedNodeId,
       editingNodeId: s.editingNodeId,
@@ -205,17 +206,36 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   }, [draft, draftSpans, id, data.label, data.labelStyles, commitNodeLabel])
 
   // 入力欄で選んでいる範囲に、太字・色を付ける（範囲を選んでいないときは文字全体に付ける）
-  const applyToSelection = useCallback((apply: (start: number, end: number) => LabelSpan[] | undefined) => {
+  // 文字がまだ空のとき（ノードを追加した直後など）は付ける先がないので、ノード全体の太字・色にする
+  // （そのあとに入力する文字がその装飾になる）
+  const applyToSelection = useCallback((
+    apply: (start: number, end: number) => LabelSpan[] | undefined,
+    applyToNode: () => void,
+  ) => {
     const input = inputRef.current
     if (!input) return
+    if (draft.length === 0) {
+      applyToNode()
+      return
+    }
     const start = input.selectionStart ?? 0
     const end = input.selectionEnd ?? 0
     if (end > start) setDraftSpans(apply(start, end))
     else setDraftSpans(apply(0, draft.length))
   }, [draft.length])
   const toggleSelectionBold = useCallback(
-    () => applyToSelection((s, e) => toggleBold(draft, draftSpans, s, e)),
-    [applyToSelection, draft, draftSpans]
+    () => applyToSelection(
+      (s, e) => toggleBold(draft, draftSpans, s, e),
+      () => updateNodeTextStyle(id, { bold: !data.bold, textColor: data.textColor }),
+    ),
+    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, data.bold, data.textColor]
+  )
+  const applyColor = useCallback(
+    (color: string | undefined) => applyToSelection(
+      (s, e) => setColor(draft, draftSpans, s, e, color),
+      () => updateNodeTextStyle(id, { bold: data.bold, textColor: color }),
+    ),
+    [applyToSelection, draft, draftSpans, updateNodeTextStyle, id, data.bold]
   )
   // 文字全体が同じ装飾なら、入力欄の文字にもすぐ反映する（一部分だけの装飾は確定後とツールバーのプレビューで確認する）
   const uniformStyle = useMemo(() => {
@@ -539,14 +559,14 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               key={c.value}
               type="button"
               title={`${c.label}（選んだ文字に付ける。選んでいなければ全体）`}
-              onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, c.value))}
+              onClick={() => applyColor(c.value)}
               style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--c-surface)', boxShadow: '0 0 0 1px var(--c-border)', background: c.value, cursor: 'pointer', padding: 0 }}
             />
           ))}
           <button
             type="button"
             title="色を元に戻す（選んだ文字。選んでいなければ全体）"
-            onClick={() => applyToSelection((s, e) => setColor(draft, draftSpans, s, e, undefined))}
+            onClick={() => applyColor(undefined)}
             style={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px dashed var(--c-text-3)', background: 'transparent', cursor: 'pointer', padding: 0 }}
           />
           {/* 編集中は入力欄で装飾が見えないので、ここに仕上がりを表示する */}
