@@ -1,5 +1,9 @@
-import { Grid2x2, List as ListIcon, Plus, Search } from 'lucide-react'
+import { useRef } from 'react'
+import { FileUp, Grid2x2, List as ListIcon, Plus, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { useMindmapStore } from '../../mindmap/store/mindmapStore'
+import { ImportError } from '../../mindmap/import/markdown'
+import { readMarkdownFile } from '../../mindmap/import/readFile'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ThemeToggle } from '../../../components/ThemeToggle'
 import { notifyLimit } from '../../../lib/limits'
@@ -28,10 +32,22 @@ export function TopBar({
   onViewModeChange,
 }: Props) {
   const addSheet = useMindmapStore((s) => s.addSheet)
+  const importSheet = useMindmapStore((s) => s.importSheet)
   const isMobile = useIsMobile()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const showSort = variant === 'library'
   const showNewButton = variant === 'recent' || variant === 'library'
+
+  // 選んだ Markdown から、新しいシートを作って開く
+  const handleImportFile = async (file: File) => {
+    try {
+      const { name, root } = await readMarkdownFile(file)
+      if (!importSheet(name, root)) notifyLimit('sheets')
+    } catch (e) {
+      toast.error(e instanceof ImportError ? e.message : 'ファイルを読み込めませんでした')
+    }
+  }
 
   return (
     <div
@@ -108,6 +124,43 @@ export function TopBar({
         >
           {viewMode === 'grid' ? <ListIcon size={15} /> : <Grid2x2 size={15} />}
         </button>
+
+        {showNewButton && (
+          <>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Markdown（.md）から新しいマップを作成"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 32,
+                padding: isMobile ? '0 10px' : '0 14px',
+                borderRadius: 10,
+                border: '1px solid var(--c-border)',
+                background: 'var(--c-surface)',
+                color: 'var(--c-text-2)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <FileUp size={14} />
+              {!isMobile && 'インポート'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.markdown,text/markdown,text/plain"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) void handleImportFile(file)
+              }}
+            />
+          </>
+        )}
 
         {showNewButton && (
           <button
