@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
-import { ImageOff, ImagePlus, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react'
+import { ImagePlus, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { toast } from 'sonner'
 import { useMindmapStore, type Sheet } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { deleteNodeImage, deleteNodeImages, getSheetImagePaths, uploadThumbnailImage } from '../../../lib/imageApi'
+import { toTemplatePath } from '../../../lib/thumbnailTemplates'
 import { MapThumbnail } from './MapThumbnail'
+import { ThumbnailPicker } from './ThumbnailPicker'
 import { formatRelativeTime } from '../utils/formatRelativeTime'
 
 interface Props {
@@ -44,6 +46,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
   const [hovered, setHovered] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [draft, setDraft] = useState(sheet.name)
   const inputRef = useRef<HTMLInputElement>(null)
   // サムネイル画像を選ぶためのファイル選択（画面には出さない）
@@ -74,9 +77,18 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
       const path = await uploadThumbnailImage(file)
       setSheetThumbnail(sheet.id, path)
       if (previous) deleteNodeImage(previous).catch(() => {})
+      setPickerOpen(false)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'サムネイルの変更に失敗しました')
     }
+  }
+
+  // 用意したテンプレート画像をサムネイルにする。前のサムネイルが自分の画像ならストレージから削除する
+  const handleTemplateSelected = (id: string) => {
+    const previous = sheet.thumbnailPath
+    setSheetThumbnail(sheet.id, toTemplatePath(id))
+    if (previous) deleteNodeImage(previous).catch(() => {})
+    setPickerOpen(false)
   }
 
   // サムネイルをデフォルト（パステルカラー）に戻す
@@ -84,6 +96,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
     const previous = sheet.thumbnailPath
     setSheetThumbnail(sheet.id, null)
     if (previous) deleteNodeImage(previous).catch(() => {})
+    setPickerOpen(false)
   }
 
   const handleOpen = () => {
@@ -193,21 +206,12 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                   <Pencil size={12} color="var(--c-text-2)" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); thumbnailInputRef.current?.click() }}
+                  onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}
                   title="サムネイル画像を変更"
                   style={ACTION_BTN}
                 >
                   <ImagePlus size={13} color="var(--c-text-2)" />
                 </button>
-                {sheet.thumbnailPath && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleThumbnailReset() }}
-                    title="サムネイルをデフォルトに戻す"
-                    style={ACTION_BTN}
-                  >
-                    <ImageOff size={13} color="var(--c-text-2)" />
-                  </button>
-                )}
                 <select
                   value={sheet.folderId ?? ''}
                   onClick={(e) => e.stopPropagation()}
@@ -280,6 +284,15 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
         onChange={handleThumbnailSelected}
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'none' }}
+      />
+
+      <ThumbnailPicker
+        open={pickerOpen}
+        thumbnailPath={sheet.thumbnailPath}
+        onSelectTemplate={handleTemplateSelected}
+        onUpload={() => thumbnailInputRef.current?.click()}
+        onReset={handleThumbnailReset}
+        onClose={() => setPickerOpen(false)}
       />
 
       <ConfirmDialog
