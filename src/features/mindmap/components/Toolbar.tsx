@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useMindmapStore } from '../store/mindmapStore'
 import { deleteNodeImages, getImagePaths, processAndUploadImage } from '../../../lib/imageApi'
 import { ConfirmDialog } from './ConfirmDialog'
-import { redo, undo, useHistory } from '../history'
+import { redo, undo, useHistory } from '../utils/history'
 
 export function Toolbar() {
   const { zoomIn, zoomOut, fitView, screenToFlowPosition } = useReactFlow()

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
-import { useMindmapStore, type Folder, type Sheet } from '../store/mindmapStore'
-import { resetHistory } from '../history'
-import { useSheetLoadStatus } from '../sheetLoader'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { Folder, Sheet } from '../../../types/sheet'
+import { resetHistory } from '../utils/history'
+import { useSheetLoadStatus } from './useCurrentSheetLoader'
 import {
   fetchSheetsMeta,
   upsertSheet,
@@ -14,7 +15,7 @@ import {
   deleteFolderFromDb,
 } from '../../../lib/sheetsApi'
 import { limitKindOf, notifyLimit } from '../../../lib/limits'
-import { isSheetLoaded } from '../../../lib/sheetLoad'
+import { isSheetLoaded } from '../../../lib/sheetRows'
 
 const NODE_DEBOUNCE_MS = 1000   // ノード・エッジ変更の保存間隔
 const SHEET_DEBOUNCE_MS = 2000  // シートメタ変更の保存間隔
@@ -59,7 +60,7 @@ export function useSheetsSync(user: User | null) {
 
   // ログイン時にSupabaseからシート・フォルダを読み込む
   // シートは、名前・スター・フォルダ・サムネイルなどの軽い項目だけを取得する。ノードの中身は、シートを開くときに取得する
-  // （sheetLoader.ts）。読み込んでいないシートの中身は空なので、DBへ書き込まない（saveSheets が列だけを更新する）
+  // （useCurrentSheetLoader.ts）。読み込んでいないシートの中身は空なので、DBへ書き込まない（saveSheets が列だけを更新する）
   useEffect(() => {
     if (!user) {
       initializedRef.current = false

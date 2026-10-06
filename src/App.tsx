@@ -1,7 +1,7 @@
 import { Toaster } from 'sonner'
 import { MindmapCanvas } from './features/mindmap/components/MindmapCanvas'
 import { useSheetsSync } from './features/mindmap/hooks/useSheetsSync'
-import { useCurrentSheetLoader } from './features/mindmap/sheetLoader'
+import { useCurrentSheetLoader } from './features/mindmap/hooks/useCurrentSheetLoader'
 import { useMindmapStore } from './features/mindmap/store/mindmapStore'
 import { HomeScreen } from './features/home/components/HomeScreen'
 import { LoginScreen } from './features/auth/LoginScreen'

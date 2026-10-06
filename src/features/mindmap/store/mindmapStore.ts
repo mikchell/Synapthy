@@ -11,74 +11,13 @@ import {
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { clampFolderName, clampSheetName, LIMITS } from '../../../lib/limits'
-import { isSheetLoaded } from '../../../lib/sheetLoad'
+import { isSheetLoaded } from '../../../lib/sheetRows'
 import { randomTemplatePath } from '../../../lib/thumbnailTemplates'
-import { safeLineColor } from '../edgeColor'
-import { remapSpans, safeTextColor, setBold, setColor, type LabelSpan } from '../labelStyle'
-
-export type NodeColor = 'purple' | 'blue' | 'cyan' | 'green' | 'pink' | 'orange'
-export type MapType = 'linear' | 'free'
-export type FreeDirection = 'right' | 'left' | 'bottom' | 'top' | 'top-right' | 'bottom-right' | 'bottom-left' | 'top-left'
-
-export interface MindmapNodeData extends Record<string, unknown> {
-  label: string
-  color: NodeColor
-  isRoot?: boolean
-  depth?: number
-  memo?: string
-  borderWidth?: number
-  sizeScale?: number
-  borderRadius?: number
-  isCircle?: boolean
-  // 文字だけのノード（ロジックツリーの中心テーマ以外）に枠線を表示するか。未指定＝表示しない
-  showBorder?: boolean
-  // ノードに付けた画像（文字の上に表示する）。path はストレージ上の保存先、width/height は表示サイズ
-  image?: NodeImage
-  // 文字の太字・色。bold / textColor はノード全体、labelStyles は文字の一部分だけの装飾（こちらが優先）
-  bold?: boolean
-  textColor?: string
-  labelStyles?: LabelSpan[]
-}
-
-export interface NodeImage {
-  path: string
-  width: number
-  height: number
-}
-
-// クリップボードから貼り付けた画像ノード（マインドマップのツリー構造には属さない自由配置要素）
-// 表示サイズはnode.style.width/heightで管理する（NodeResizeControlがそのまま更新できるようにするため）
-export interface ImageNodeData extends Record<string, unknown> {
-  path: string
-  rotation?: number
-}
-
-export type AnyNodeData = MindmapNodeData | ImageNodeData
-
-export interface Sheet {
-  id: string
-  name: string
-  mapType?: MapType
-  nodes: Node<AnyNodeData>[]
-  edges: Edge[]
-  // ノードの中身（nodes / edges）を読み込んでいるか。false のシートは中身が空で、DB に書き込んではいけない
-  // （初回ロードでは、軽い項目だけを取得し、中身はシートを開くときに取得する）。未設定は読み込み済みとして扱う
-  loaded?: boolean
-  // ホームのカードに表示する画像のストレージ上のパス。未設定ならシートごとのパステルカラー
-  thumbnailPath?: string | null
-  // このシートの線の色（edgeColor.ts のパレットのいずれか）。未設定ならテーマの色
-  lineColor?: string | null
-  isStarred: boolean
-  deletedAt: string | null
-  lastOpenedAt: string
-  updatedAt: string
-  folderId: string | null
-}
-
-export interface Folder {
-  id: string
-  name: string
-}
+import { safeLineColor } from '../utils/edgeColor'
+import { remapSpans, safeTextColor, setBold, setColor } from '../utils/labelStyle'
+import type { NodeColor, FreeDirection, NodeImage, MindmapNodeData, ImageNodeData, AnyNodeData } from '../../../types/mindmap'
+import type { Sheet, Folder } from '../../../types/sheet'
+import type { LabelSpan } from '../../../types/mindmap'
 
 interface MindmapStore {
   sheets: Sheet[]
@@ -166,13 +105,6 @@ const generateId = () => `node-${Date.now()}-${nodeIdCounter++}`
 const generateSheetId = () => crypto.randomUUID()
 
 const COLORS: NodeColor[] = ['purple', 'blue', 'cyan', 'green', 'pink', 'orange']
-
-// ロジックツリーのノードサイズ（小・中・大）。data.sizeScale に倍率として保存する
-export const NODE_SIZE_STEPS = [
-  { label: '小', scale: 0.8 },
-  { label: '中', scale: 1 },
-  { label: '大', scale: 1.3 },
-] as const
 
 const NODE_W = 240
 const NODE_H = 80

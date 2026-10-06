@@ -37,9 +37,12 @@ src/features/<feature>/
 └── utils/        # 純粋関数（UIを持たないロジック）
 ```
 
-- 複数featureをまたいで使う薄いラッパー（Supabaseクライアント、APIアクセス関数、テーマ）は `src/lib/` に置く
+- 複数featureをまたいで使う薄いラッパー（Supabaseクライアント、APIアクセス関数、テーマ）や、共通の純粋関数・定数（`sheetSelectors.ts`、`limits.ts` など）は `src/lib/` に置く
+- 複数のfeatureと `lib/` から使う型（`Sheet`・`Folder`・ノードの型）は `src/types/` に置く
+- 依存の向きは、`features` → `lib` / `types` / `components` / `hooks` の一方向にする。`lib/`・`types/` から `features/` を import しない（型を `lib/` で使いたいときは、`src/types/` に移す）
 - 複数featureをまたいで使うReactコンポーネント・フックは `src/components/` / `src/hooks/` に置く
 - 現在は `auth` / `home` / `mindmap` / `tutorial` の4 feature。新しいfeatureを追加する場合もこの構成に従う（`tutorial` は規模が小さいため、ストアを `store/` に分けず、feature の直下に置いている）
+- feature の直下に `.ts` を直接置かず、`utils/`（純粋関数）か `hooks/`（フック）に置く（`tutorial` は上のとおり例外）
 - ガイドツアーの対象にする要素には `data-tour="..."` を付け、`src/features/tutorial/steps.ts` のセレクタから参照する。対象の要素を動かす・消すときは、`steps.ts` も一緒に見直す
 
 ## 命名規則

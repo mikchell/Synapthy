@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
-import { findTemplate, isTemplatePath } from '../../../lib/thumbnailTemplates'
+import { getNodeImageSignedUrl, refreshSignedUrl } from '../lib/imageApi'
+import { findTemplate, isTemplatePath } from '../lib/thumbnailTemplates'
 
 interface Props {
   sheetId: string

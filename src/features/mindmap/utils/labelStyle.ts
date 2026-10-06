@@ -3,13 +3,7 @@
 // ラベル（label）は今まで通りの文字列のまま持ち、装飾は範囲ごとの配列（labelStyles）として別に持つ。
 // HTML は保存しない（描画時に React の要素へ変換する）ので、XSS の経路を増やさない。
 
-export interface LabelSpan {
-  start: number // 範囲の先頭（含む）。label の UTF-16 インデックス（input の selectionStart と同じ単位）
-  end: number // 範囲の末尾（含まない）
-  bold?: boolean
-  color?: string
-}
-
+import type { LabelSpan } from '../../../types/mindmap'
 export interface LabelSegment {
   text: string
   bold?: boolean

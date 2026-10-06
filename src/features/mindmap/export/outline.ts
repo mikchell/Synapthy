@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
-import type { AnyNodeData, MindmapNodeData } from '../store/mindmapStore'
-import { toSegments } from '../labelStyle'
+import type { AnyNodeData, MindmapNodeData } from '../../../types/mindmap'
+import { toSegments } from '../utils/labelStyle'
 
 // マインドマップを、階層をインデントした Markdown の箇条書きにする
 // - つなぎ方（エッジ）をたどって階層を作り、同じ階層の順番は画面の上から下（同じ高さなら左から右）

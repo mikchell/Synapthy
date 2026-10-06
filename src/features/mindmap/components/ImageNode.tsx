@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { deleteNodeImage, getNodeImageSignedUrl, refreshSignedUrl } from '../../../lib/imageApi'
-import { type ImageNodeData, useMindmapStore } from '../store/mindmapStore'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { ImageNodeData } from '../../../types/mindmap'
 
 const MIN_SIZE = 60
 

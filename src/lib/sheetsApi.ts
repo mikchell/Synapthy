@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
-import type { Folder, Sheet } from '../features/mindmap/store/mindmapStore'
-import { isSheetLoaded, planSheetWrites, sheetFromMetaRow, SHEET_META_COLUMNS, type SheetMetaRow } from './sheetLoad'
+import type { Folder, Sheet } from '../types/sheet'
+import { isSheetLoaded, planSheetWrites, sheetFromMetaRow, SHEET_META_COLUMNS, type SheetMetaRow } from './sheetRows'
 
 interface DbSheetMeta {
   id: string

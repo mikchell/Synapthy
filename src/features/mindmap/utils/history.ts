@@ -1,6 +1,7 @@
 import type { Edge, Node } from '@xyflow/react'
 import { create } from 'zustand'
-import { useMindmapStore, type AnyNodeData } from './store/mindmapStore'
+import { useMindmapStore } from '../store/mindmapStore'
+import type { AnyNodeData } from '../../../types/mindmap'
 
 // ボードの編集の「元に戻す／やり直す」
 //

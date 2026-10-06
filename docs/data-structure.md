@@ -2,7 +2,7 @@
 
 ## フロントエンド（Zustand ストア）
 
-アプリの状態は `src/features/mindmap/store/mindmapStore.ts` で管理します。
+アプリの状態は `src/features/mindmap/store/mindmapStore.ts` で管理します。型（`Sheet`・`Folder`・ノードの型）は、複数の feature と `lib/` から使うので、`src/types/`（`sheet.ts`・`mindmap.ts`）に置いています。
 
 ```ts
 // ノードのカラー種別
@@ -34,7 +34,7 @@ interface MindmapNodeData {
   labelStyles?: LabelSpan[] // 文字の一部分だけの装飾（ノード全体の設定より優先）
 }
 
-// 文字の一部分の装飾（src/features/mindmap/labelStyle.ts）
+// 文字の一部分の装飾（型は src/types/mindmap.ts、処理は src/features/mindmap/utils/labelStyle.ts）
 // HTML は保存せず、範囲ごとの配列で持つ。start/end は label の UTF-16 インデックス（end は含まない）
 interface LabelSpan {
   start: number
@@ -132,7 +132,7 @@ interface MindmapStore {
 
 ### Undo / Redo（`history.ts`）
 
-Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止まってから1件のスナップショットとして履歴（`past` / `future`、最大100件）に積みます。シートを切り替えると履歴は破棄されます。ストアには状態を持たず、`src/features/mindmap/history.ts` 内のモジュールスコープ変数で管理しています。
+Zustand ストアの `nodes` / `edges` の変化を監視し、編集が止まってから1件のスナップショットとして履歴（`past` / `future`、最大100件）に積みます。シートを切り替えると履歴は破棄されます。ストアには状態を持たず、`src/features/mindmap/utils/history.ts` 内のモジュールスコープ変数で管理しています。
 
 ### テーマ（`theme.ts`）
 
@@ -266,7 +266,7 @@ Zustand ストア（nodes / edges / sheets / folders をインメモリで更新
 
 ### シートの中身の遅延読み込み
 
-シートを多く持つアカウントで、ログインのたびに全シートの中身を転送しないよう、ノードの中身は**編集画面でシートを開くときに、そのシート1枚分だけ**取得します（`sheetLoader.ts` の `useCurrentSheetLoader`）。
+シートを多く持つアカウントで、ログインのたびに全シートの中身を転送しないよう、ノードの中身は**編集画面でシートを開くときに、そのシート1枚分だけ**取得します（`src/features/mindmap/hooks/useCurrentSheetLoader.ts` の `useCurrentSheetLoader`）。
 
 - 中身を読み込んでいないシートは、`loaded: false` で、`nodes` / `edges` が空。読み込み済みのシート（`loaded` が未設定の、この仕組みの導入前の端末のキャッシュを含む）と区別する（`isSheetLoaded()`）
 - 取得するのは、ログイン中のユーザーのデータの読み込みが終わっていて、編集画面で、未読み込みのシートを開いているときだけ。取得中は、キャンバスの代わりに「読み込み中」の画面（`SheetLoadScreen`）を出す。取得に失敗したときは、「再読み込み」と「ホームへ戻る」を出す

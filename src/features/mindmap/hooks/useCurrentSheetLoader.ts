@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { create } from 'zustand'
-import { fetchSheetData } from '../../lib/sheetsApi'
-import { isSheetLoaded } from '../../lib/sheetLoad'
-import { resetHistory } from './history'
-import { useMindmapStore } from './store/mindmapStore'
+import { fetchSheetData } from '../../../lib/sheetsApi'
+import { isSheetLoaded } from '../../../lib/sheetRows'
+import { resetHistory } from '../utils/history'
+import { useMindmapStore } from '../store/mindmapStore'
 
 // シートのノードの中身を読み込む仕組みの状態
 // （初回ロードでは軽い項目だけを取得し、中身は、編集画面でシートを開くときに取得する）

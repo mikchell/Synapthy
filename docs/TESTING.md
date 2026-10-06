@@ -27,6 +27,6 @@ npm run lint     # oxlint
 
 ## 今後テストを導入する場合の指針
 
-- まず対象にすべきはロジックが集中している純粋関数：`src/features/mindmap/store/mindmapStore.ts` のレイアウト計算・整列アルゴリズム、`src/features/home/utils/`（`sheetSelectors.ts` など）
+- まず対象にすべきはロジックが集中している純粋関数：`src/features/mindmap/store/mindmapStore.ts` のレイアウト計算・整列アルゴリズム、`src/lib/`（`sheetSelectors.ts` など）
 - `useSheetsSync.ts` のデバウンス/即時保存の分岐はリグレッションが起きやすい箇所なので、ユニットテストでカバーする価値が高い
 - UIの自動テストを入れる場合は、Vite環境と相性のよいVitest + React Testing Libraryを軸に検討する（現時点では未決定・未導入）
