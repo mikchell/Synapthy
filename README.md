@@ -4,7 +4,7 @@
 
 アイデアをつなげるマインドマップアプリ。ノードを右方向に展開し、思考の流れを視覚化します。
 
-**https://synaptique-dun.vercel.app/**
+**https://synapthy.vercel.app/**
 
 ---
 
