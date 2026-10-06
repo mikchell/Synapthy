@@ -1,8 +1,9 @@
-import { EdgeLabelRenderer, Position, type EdgeProps, getBezierPath, getStraightPath, useInternalNode } from '@xyflow/react'
+import { EdgeLabelRenderer, type EdgeProps, getStraightPath, useInternalNode } from '@xyflow/react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { memo, useRef, useState } from 'react'
 import { useMindmapStore, type MindmapNodeData } from '../store/mindmapStore'
+import { JUNCTION_OFFSET, LINE_WIDTH } from './logicTree'
 
 function ellipseBorderPoint(
   cx: number, cy: number,
@@ -63,23 +64,29 @@ function InteractiveEdgeComponent({
     tx = tgtPt.x; ty = tgtPt.y
   }
 
-  // ロジックツリー：エッジに保存されたハンドルIDには関係なく、
-  // 常に「親の右側の中央 → 子の左側の中央」で接続する
-  // ※ ハンドル位置（handleBounds）はノードの出現アニメーション（scale 0→1）中に測られて
-  //   中央に潰れた値のまま残ることがあるため使わず、ノードの位置とサイズから直接計算する
+  let edgePath: string, labelX: number, labelY: number
+
   if (!isFree && sourceNode && targetNode) {
-    sx = sourceNode.internals.positionAbsolute.x + (sourceNode.measured?.width ?? 200)
+    // ロジックツリー：エッジに保存されたハンドルIDには関係なく、
+    // 常に「親の右にある分岐点の丸 → 子の左側の中央」で接続する
+    // ※ ハンドル位置（handleBounds）はノードの出現アニメーション（scale 0→1）中に測られて
+    //   中央に潰れた値のまま残ることがあるため使わず、ノードの位置とサイズから直接計算する
+    sx = sourceNode.internals.positionAbsolute.x + (sourceNode.measured?.width ?? 200) + JUNCTION_OFFSET
     sy = sourceNode.internals.positionAbsolute.y + (sourceNode.measured?.height ?? 60) / 2
     tx = targetNode.internals.positionAbsolute.x
     ty = targetNode.internals.positionAbsolute.y + (targetNode.measured?.height ?? 60) / 2
-  }
 
-  const [edgePath, labelX, labelY] = isFree
-    ? getStraightPath({ sourceX: sx, sourceY: sy, targetX: tx, targetY: ty })
-    : getBezierPath({
-        sourceX: sx, sourceY: sy, sourcePosition: Position.Right,
-        targetX: tx, targetY: ty, targetPosition: Position.Left,
-      })
+    // 分岐点から上下へふくらんで枝分かれし、子には横向きで入る曲線
+    const dx = tx - sx
+    const c1 = { x: sx + dx * 0.12, y: ty }
+    const c2 = { x: sx + dx * 0.55, y: ty }
+    edgePath = `M ${sx},${sy} C ${c1.x},${c1.y} ${c2.x},${c2.y} ${tx},${ty}`
+    // ホバー時の＋ボタンは曲線の中間点（t=0.5）に表示
+    labelX = (sx + 3 * c1.x + 3 * c2.x + tx) / 8
+    labelY = (sy + 3 * c1.y + 3 * c2.y + ty) / 8
+  } else {
+    ;[edgePath, labelX, labelY] = getStraightPath({ sourceX: sx, sourceY: sy, targetX: tx, targetY: ty })
+  }
 
   const { opacity: styleOpacity, ...restStyle } = (style ?? {}) as React.CSSProperties
 
@@ -110,7 +117,8 @@ function InteractiveEdgeComponent({
         className="react-flow__edge-path"
         d={edgePath}
         fill="none"
-        style={{ ...restStyle, pointerEvents: 'none' }}
+        // 線の色はデータに保存された値ではなくテーマの色を使う（ダークモードで見やすい色に切り替わる）
+        style={{ ...restStyle, stroke: 'var(--c-line)', strokeWidth: LINE_WIDTH, pointerEvents: 'none' }}
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: Number(styleOpacity ?? 0.6) }}
         transition={{
@@ -147,9 +155,9 @@ function InteractiveEdgeComponent({
                 width: 22,
                 height: 22,
                 borderRadius: '50%',
-                background: '#ffffff',
+                background: 'var(--c-surface)',
                 border: '1.5px solid rgba(124, 58, 237, 0.5)',
-                color: '#7c3aed',
+                color: 'var(--c-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

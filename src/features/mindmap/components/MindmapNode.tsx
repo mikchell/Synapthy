@@ -1,18 +1,21 @@
 import { Handle, Position, type Node, type NodeProps, NodeResizeControl } from '@xyflow/react'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
-import { Plus, Trash2, StickyNote } from 'lucide-react'
+import { ImagePlus, Plus, Trash2, StickyNote } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
+import { NodeImageView } from './NodeImageView'
+import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { type MindmapNodeData, type NodeColor, type FreeDirection, useMindmapStore } from '../store/mindmapStore'
 
 export const COLOR_MAP: Record<NodeColor, { bg: string; border: string; glow: string; text: string }> = {
-  purple: { bg: '#f3e8ff', border: 'rgba(139, 92, 246, 0.4)', glow: 'rgba(139, 92, 246, 0.12)', text: '#5b21b6' },
-  blue:   { bg: '#dbeafe', border: 'rgba(59, 130, 246, 0.4)',  glow: 'rgba(59, 130, 246, 0.12)',  text: '#1e40af' },
-  cyan:   { bg: '#cffafe', border: 'rgba(6, 182, 212, 0.4)',   glow: 'rgba(6, 182, 212, 0.12)',   text: '#0e7490' },
-  green:  { bg: '#dcfce7', border: 'rgba(34, 197, 94, 0.4)',   glow: 'rgba(34, 197, 94, 0.12)',   text: '#15803d' },
-  pink:   { bg: '#fce7f3', border: 'rgba(236, 72, 153, 0.4)',  glow: 'rgba(236, 72, 153, 0.12)',  text: '#be185d' },
-  orange: { bg: '#ffedd5', border: 'rgba(249, 115, 22, 0.4)',  glow: 'rgba(249, 115, 22, 0.12)',  text: '#c2410c' },
+  purple: { bg: 'var(--node-purple-bg)', border: 'rgba(139, 92, 246, 0.4)', glow: 'rgba(139, 92, 246, 0.12)', text: 'var(--node-purple-text)' },
+  blue:   { bg: 'var(--node-blue-bg)', border: 'rgba(59, 130, 246, 0.4)',  glow: 'rgba(59, 130, 246, 0.12)',  text: 'var(--node-blue-text)' },
+  cyan:   { bg: 'var(--node-cyan-bg)', border: 'rgba(6, 182, 212, 0.4)',   glow: 'rgba(6, 182, 212, 0.12)',   text: 'var(--node-cyan-text)' },
+  green:  { bg: 'var(--node-green-bg)', border: 'rgba(34, 197, 94, 0.4)',   glow: 'rgba(34, 197, 94, 0.12)',   text: 'var(--node-green-text)' },
+  pink:   { bg: 'var(--node-pink-bg)', border: 'rgba(236, 72, 153, 0.4)',  glow: 'rgba(236, 72, 153, 0.12)',  text: 'var(--node-pink-text)' },
+  orange: { bg: 'var(--node-orange-bg)', border: 'rgba(249, 115, 22, 0.4)',  glow: 'rgba(249, 115, 22, 0.12)',  text: 'var(--node-orange-text)' },
 }
 
 // depth 0 = root（最大）、depth が深くなるほど小さく
@@ -31,15 +34,32 @@ const ADD_BTN: React.CSSProperties = {
   width: 22,
   height: 22,
   borderRadius: '50%',
-  background: '#ffffff',
+  background: 'var(--c-surface)',
   border: '1.5px solid rgba(124, 58, 237, 0.5)',
-  color: '#7c3aed',
+  color: 'var(--c-accent)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   cursor: 'pointer',
   zIndex: 20,
   boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+  padding: 0,
+}
+
+// ロジックツリーの「子を追加」「兄弟を追加」ボタン（小さな塗りつぶしの丸）
+const LOGIC_ADD_BTN: React.CSSProperties = {
+  width: 18,
+  height: 18,
+  flexShrink: 0,
+  borderRadius: '50%',
+  background: '#7c3aed',
+  border: 'none',
+  color: '#ffffff',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  boxShadow: '0 1px 4px rgba(124,58,237,0.35)',
   padding: 0,
 }
 
@@ -68,9 +88,10 @@ const DIRECTION_ANGLE: Record<FreeDirection, number> = {
 }
 
 function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<Node<MindmapNodeData>>) {
-  const { addChildNode, addChildNodeInDirection, updateNodeLabel, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
+  const { addChildNode, addSiblingNode, addChildNodeInDirection, updateNodeLabel, deleteNode, setSelectedNodeId, editingNodeId, setEditingNodeId, currentMapType } = useMindmapStore(
     useShallow((s) => ({
       addChildNode: s.addChildNode,
+      addSiblingNode: s.addSiblingNode,
       addChildNodeInDirection: s.addChildNodeInDirection,
       updateNodeLabel: s.updateNodeLabel,
       deleteNode: s.deleteNode,
@@ -81,8 +102,13 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     }))
   )
   const isFree = currentMapType === 'free'
+  // ロジックツリーの中心テーマ以外は、枠も塗りもない「文字だけ」のノードにする
+  const textOnly = !isFree && !data.isRoot
+  // 子がいるノードの右には、線が枝分かれする「分岐点の丸」を出す
+  const hasChildren = useMindmapStore((s) => !isFree && s.edges.some((e) => e.source === id))
   const isMobile = useIsMobile()
   const updateNodeSize = useMindmapStore((s) => s.updateNodeSize)
+  const setNodeImage = useMindmapStore((s) => s.setNodeImage)
   const [editing, setEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(data.label)
@@ -97,8 +123,12 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   const rawX = useMotionValue(0)
   const rawY = useMotionValue(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  // ノードに画像を付けるためのファイル選択（画面には出さない）
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const colors = COLOR_MAP[data.color]
   const showActions = (selected || hovered) && !editing
+  // 画像だけのノード（画像があり文字が空）では、文字も薄い仮表示も出さない。編集中は入力欄を出す
+  const showText = editing || !!data.label || !data.image
   const baseSz = SIZE_MAP[data.isRoot ? 0 : 1]
   // ロジックツリーはサイズ段階（小・中・大 = data.sizeScale）で文字・余白ごと拡大縮小する
   const stepScale = isFree ? 1 : (data.sizeScale ?? 1)
@@ -111,15 +141,24 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
     borderRadius: Math.round(baseSz.borderRadius * stepScale),
   }, [baseSz, stepScale])
   // フリーモードは縦パディングを2.5倍にしてアスペクト比を約1.1:1に（楕円が丸く見える）
-  const paddingV = isFree ? Math.round(sz.paddingH * 2.5) : sz.paddingV
-  const defaultRadius = isFree ? '50%' : sz.borderRadius
+  // 画像付きのノードは、楕円だと画像の角がはみ出すので角丸の四角にする
+  const ellipse = isFree && !data.image
+  const paddingV = ellipse ? Math.round(sz.paddingH * 2.5) : isFree ? sz.paddingH : sz.paddingV
+  const defaultRadius = ellipse ? '50%' : isFree ? 24 : sz.borderRadius
   const nodeBorderRadius = data.isCircle ? 9999 : (data.borderRadius !== undefined ? data.borderRadius : defaultRadius)
   // width・height両方使って面積ベースでスケール（より追従感が出る）
   const defaultH = paddingV * 2 + sz.fontSize * 2.2
   // 自由リサイズに合わせた文字の拡大はフリー展開のみ（ロジックツリーはサイズ段階で決まる）
-  const scaleW = isFree && width ? width / sz.minWidth : 1
-  const scaleH = isFree && height ? height / defaultH : 1
-  const fontSize = Math.round(sz.fontSize * Math.sqrt(scaleW * scaleH))
+  // （画像付きのノードは画像の分だけ大きくなるので、文字は拡大しない）
+  const scaleW = ellipse && width ? width / sz.minWidth : 1
+  const scaleH = ellipse && height ? height / defaultH : 1
+  // 文字だけのノードは、箱のノードより少し大きい文字にして読みやすくする
+  // （ロジックツリーの中心テーマも、子より小さく見えないよう少し大きくする）
+  const fontSize = textOnly
+    ? Math.round(18 * stepScale)
+    : !isFree && data.isRoot
+      ? Math.round(20 * stepScale)
+      : Math.round(sz.fontSize * Math.sqrt(scaleW * scaleH))
 
   useEffect(() => { setDraft(data.label) }, [data.label])
 
@@ -261,26 +300,38 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       style={{
         width: '100%',
         height: '100%',
-        minWidth: sz.minWidth,
-        minHeight: data.isCircle ? sz.minWidth : paddingV * 2 + sz.fontSize * 2,
         boxSizing: 'border-box',
-        borderRadius: nodeBorderRadius,
-        background: colors.bg,
-        border: `${data.borderWidth ?? sz.borderWidth}px solid ${data.borderWidth && data.borderWidth > 2 ? colors.border.replace('0.4)', '0.85)') : colors.border}`,
-        boxShadow: selected
-          ? `0 0 0 2px #7c3aed, 0 4px 16px ${colors.glow}`
-          : `0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px ${colors.border}`,
-        padding: `${paddingV}px ${sz.paddingH}px`,
+        ...(textOnly
+          ? {
+              // 文字だけのノード：選択時だけ角丸の枠、ホバー時はごく薄い背景
+              borderRadius: 10,
+              background: hovered && !selected ? 'var(--c-hover)' : 'transparent',
+              border: data.showBorder ? `1.5px solid ${colors.border}` : 'none',
+              boxShadow: selected ? '0 0 0 2px var(--c-select)' : 'none',
+              padding: `${Math.round(6 * stepScale)}px ${Math.round(12 * stepScale)}px`,
+              whiteSpace: 'nowrap' as const,
+            }
+          : {
+              minWidth: sz.minWidth,
+              minHeight: data.isCircle ? sz.minWidth : paddingV * 2 + sz.fontSize * 2,
+              borderRadius: nodeBorderRadius,
+              background: colors.bg,
+              border: `${data.borderWidth ?? sz.borderWidth}px solid ${data.borderWidth && data.borderWidth > 2 ? colors.border.replace('0.4)', '0.85)') : colors.border}`,
+              boxShadow: selected
+                ? `0 0 0 2px var(--c-select), 0 4px 16px ${colors.glow}`
+                : `0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px ${colors.border}`,
+              padding: `${paddingV}px ${sz.paddingH}px`,
+            }),
         cursor: 'grab',
         userSelect: 'none',
         position: 'relative',
         overflow: 'visible',
-        transition: 'box-shadow 0.2s ease',
+        transition: 'box-shadow 0.2s ease, background 0.15s ease',
         fontSize,
-        fontWeight: sz.fontWeight,
+        fontWeight: textOnly ? 500 : sz.fontWeight,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        alignItems: textOnly ? 'flex-start' : 'center',
         justifyContent: 'center',
       }}
       onDoubleClick={() => setEditing(true)}
@@ -293,8 +344,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       onTouchMove={isFree && isMobile && selected ? handlePinchMove : undefined}
       onTouchEnd={isFree && isMobile && selected ? handlePinchEnd : undefined}
     >
-      {/* マウント時のみ：ネットワーク拡散リング */}
-      <motion.div
+      {/* マウント時のみ：ネットワーク拡散リング（文字だけのノードには出さない） */}
+      {!textOnly && <motion.div
         initial={{ scale: 1, opacity: 0.7 }}
         animate={{ scale: 2.6, opacity: 0 }}
         transition={{ duration: 0.6, delay: (data.depth ?? 0) * 0.15 + 0.1, ease: 'easeOut' }}
@@ -304,7 +355,23 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
           border: `2px solid ${colors.border.replace('0.4)', '0.9)')}`,
           pointerEvents: 'none',
         }}
-      />
+      />}
+
+      {/* ロジックツリー：子がいるノードの右に、線が枝分かれする分岐点の丸（短い線でノードとつなぐ） */}
+      {hasChildren && (
+        <svg
+          width={JUNCTION_OFFSET + JUNCTION_RADIUS + 2}
+          height={JUNCTION_RADIUS * 2 + 4}
+          style={{
+            position: 'absolute', left: '100%', top: '50%',
+            marginTop: -(JUNCTION_RADIUS + 2),
+            overflow: 'visible', pointerEvents: 'none',
+          }}
+        >
+          <line x1={0} y1={JUNCTION_RADIUS + 2} x2={JUNCTION_OFFSET - JUNCTION_RADIUS} y2={JUNCTION_RADIUS + 2} stroke="var(--c-line)" strokeWidth={LINE_WIDTH} opacity={0.7} />
+          <circle cx={JUNCTION_OFFSET} cy={JUNCTION_RADIUS + 2} r={JUNCTION_RADIUS} fill="var(--c-bg)" stroke="var(--c-line)" strokeWidth={LINE_WIDTH} />
+        </svg>
+      )}
       {/* 四隅の自由リサイズはフリー展開のみ */}
       {isFree && selected && (['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map((pos) => (
         <NodeResizeControl
@@ -316,8 +383,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
           style={{
             width: 10, height: 10,
             borderRadius: '50%',
-            background: 'white',
-            border: '2px solid #7c3aed',
+            background: 'var(--c-surface)',
+            border: '2px solid var(--c-accent)',
             boxShadow: '0 1px 4px rgba(124,58,237,0.3)',
           }}
         />
@@ -332,6 +399,17 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
       <Handle id="free-src" type="source" position={Position.Top} style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', opacity: 0, pointerEvents: 'none' }} />
       <Handle id="free-tgt" type="target" position={Position.Top} style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', opacity: 0, pointerEvents: 'none' }} />
 
+      {/* ノードに付けた画像（文字の上に表示） */}
+      {data.image && (
+        <NodeImageView
+          image={data.image}
+          hasText={showText}
+          showControls={showActions}
+          onRemove={() => removeImageFromNode(id)}
+          onResize={(w, h) => data.image && setNodeImage(id, { ...data.image, width: w, height: h })}
+        />
+      )}
+
       {editing ? (
         // 入力欄の幅を入力中の文字に合わせる（input 既定の幅でノードが広がり、確定時と大きさが変わるのを防ぐ）
         // 見えないspanで文字幅を測り、同じグリッドセルに input を重ねる
@@ -342,12 +420,12 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               gridArea: '1 / 1',
               // 未入力のときだけ薄い「アイデア」を仮表示し、入力があれば幅合わせ専用として隠す
               visibility: draft ? 'hidden' : 'visible',
-              color: colors.text,
+              color: textOnly ? 'var(--c-text)' : colors.text,
               opacity: 0.35,
               pointerEvents: 'none',
               whiteSpace: 'pre',
               fontSize,
-              fontWeight: sz.fontWeight,
+              fontWeight: textOnly ? 500 : sz.fontWeight,
               lineHeight: 1.4,
             }}
           >
@@ -369,25 +447,25 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               padding: 0,
               margin: 0,
               font: 'inherit',
-              color: colors.text,
+              color: textOnly ? 'var(--c-text)' : colors.text,
               fontSize,
-              fontWeight: sz.fontWeight,
+              fontWeight: textOnly ? 500 : sz.fontWeight,
               lineHeight: 1.4,
               width: '100%',
               minWidth: 0,
-              textAlign: 'center',
+              textAlign: textOnly ? 'left' : 'center',
             }}
           />
         </span>
-      ) : (
+      ) : showText && (
         <p
           style={{
-            color: colors.text,
+            color: textOnly ? 'var(--c-text)' : colors.text,
             fontSize,
-            fontWeight: sz.fontWeight,
+            fontWeight: textOnly ? 500 : sz.fontWeight,
             margin: 0,
-            textAlign: 'center',
-            wordBreak: 'break-word',
+            textAlign: textOnly ? 'left' : 'center',
+            wordBreak: textOnly ? 'normal' : 'break-word',
             lineHeight: 1.4,
             opacity: data.label ? 1 : 0.35,
           }}
@@ -424,7 +502,7 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               top: 'calc(100% + 10px)',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: 'rgba(255,255,255,0.97)',
+              background: 'var(--c-glass)',
               border: `1.5px solid ${colors.border}`,
               borderRadius: 12,
               padding: '10px 14px',
@@ -456,12 +534,12 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
               height: 0,
               borderLeft: '5px solid transparent',
               borderRight: '5px solid transparent',
-              borderBottom: '5px solid rgba(255,255,255,0.97)',
+              borderBottom: '5px solid var(--c-glass)',
             }} />
             <p style={{
               margin: 0,
               fontSize: 12,
-              color: '#334155',
+              color: 'var(--c-text)',
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
@@ -472,42 +550,94 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
         )}
       </AnimatePresence>
 
-      {/* 削除ボタン（ルートは複数シートある場合のみ表示） */}
+      {/* 左上：削除ボタンと、画像を追加するボタン */}
       <AnimatePresence>
         {showActions && (
-          <div style={{ position: 'absolute', top: -10, left: -10 }}>
-            <motion.button
-              key="delete"
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.12 }}
-              onClick={(e) => { e.stopPropagation(); deleteNode(id) }}
-              style={{ ...ADD_BTN, border: '1.5px solid rgba(239, 68, 68, 0.6)', color: '#ef4444' }}
-            >
-              <Trash2 size={11} />
-            </motion.button>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ロジックツリーモード：右の + ボタン */}
-      <AnimatePresence>
-        {!isFree && showActions && (
-          <motion.button
-            key="add-right"
+          <motion.div
+            key="node-actions"
+            className="nodrag"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
             transition={{ duration: 0.12 }}
-            onClick={(e) => { e.stopPropagation(); addChildNode(id) }}
-            style={{ ...ADD_BTN, right: -11, top: '50%', marginTop: -11 }}
-            title="右に追加"
+            style={{ position: 'absolute', top: -12, left: -10, display: 'flex', gap: 4, zIndex: 20 }}
           >
-            <Plus size={13} />
-          </motion.button>
+            {/* 中心テーマは削除できないので、削除ボタンを出さない */}
+            {!data.isRoot && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // ノードと一緒に、付けていた画像のファイルも削除する
+                  removeImageFromNode(id)
+                  deleteNode(id)
+                }}
+                title="削除"
+                style={{ ...ADD_BTN, position: 'static', border: '1.5px solid rgba(239, 68, 68, 0.6)', color: '#ef4444' }}
+              >
+                <Trash2 size={11} />
+              </button>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+              title={data.image ? '画像を変更' : '画像を追加'}
+              style={{ ...ADD_BTN, position: 'static' }}
+            >
+              <ImagePlus size={12} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) attachImageToNode(id, file)
+        }}
+      />
+
+      {/* ロジックツリーモード：右の +（子を追加）と下の +（兄弟を追加） */}
+      {/* ボタンはノードの外に出るので、ノードとボタンの間でホバーが切れないよう、見えない帯の中に置く */}
+      {!isFree && showActions && (
+        <div
+          className="nodrag"
+          style={{
+            position: 'absolute', left: '100%', top: 0, height: '100%',
+            width: JUNCTION_OFFSET + 14,
+            display: 'flex', alignItems: 'center',
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); addChildNode(id) }}
+            // 子がいるときは分岐点の丸の上に重ねる
+            style={{ ...LOGIC_ADD_BTN, marginLeft: hasChildren ? JUNCTION_OFFSET - 9 : 4 }}
+            title="子を追加"
+          >
+            <Plus size={11} />
+          </button>
+        </div>
+      )}
+      {!isFree && showActions && !data.isRoot && (
+        <div
+          className="nodrag"
+          style={{
+            position: 'absolute', left: 0, top: '100%', width: '100%', height: 22,
+            display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); addSiblingNode(id) }}
+            style={LOGIC_ADD_BTN}
+            title="兄弟を追加"
+          >
+            <Plus size={11} />
+          </button>
+        </div>
+      )}
 
       {/* フリー展開モード：カーソルの方向に合わせてノードの縁に出す + ボタン */}
       <AnimatePresence>

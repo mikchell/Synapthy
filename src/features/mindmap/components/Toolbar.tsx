@@ -1,25 +1,20 @@
 import { motion } from 'framer-motion'
-import { ImagePlus, Maximize2, RotateCcw, ZoomIn, ZoomOut, LayoutDashboard, ArrowLeftRight } from 'lucide-react'
+import { ImagePlus, Maximize2, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useReactFlow } from '@xyflow/react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useMindmapStore } from '../store/mindmapStore'
 import { deleteNodeImages, getImagePaths, processAndUploadImage } from '../../../lib/imageApi'
 import { ConfirmDialog } from './ConfirmDialog'
+import { redo, undo, useHistory } from '../history'
 
 export function Toolbar() {
   const { zoomIn, zoomOut, fitView, screenToFlowPosition } = useReactFlow()
-  const selectedCount = useMindmapStore((s) => s.nodes.filter((n) => n.selected).length)
   const resetMindmap = useMindmapStore((s) => s.resetMindmap)
-  const tidyLayout = useMindmapStore((s) => s.tidyLayout)
-  const tidySelectedLayout = useMindmapStore((s) => s.tidySelectedLayout)
-  const toggleLayout = useMindmapStore((s) => s.toggleLayout)
   const addImageNode = useMindmapStore((s) => s.addImageNode)
-  const hasSnapshot = useMindmapStore((s) => s.layoutSnapshot !== null)
-  const isFree = useMindmapStore((s) => s.sheets.find((sh) => sh.id === s.currentSheetId)?.mapType === 'free')
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [tidyConfirmOpen, setTidyConfirmOpen] = useState(false)
-  const hasSelection = selectedCount >= 2
+  const canUndo = useHistory((h) => h.canUndo)
+  const canRedo = useHistory((h) => h.canRedo)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // スマホなどペースト操作が無い環境向けの画像追加（クリップボード貼り付けと同じ処理を使う）
@@ -33,16 +28,6 @@ export function Toolbar() {
       .catch((err) => toast.error(err instanceof Error ? err.message : '画像の追加に失敗しました'))
   }
 
-  const handleTidyConfirm = () => {
-    if (hasSelection) {
-      tidySelectedLayout()
-    } else {
-      tidyLayout()
-      setTimeout(() => fitView({ padding: 0.3, duration: 500 }), 50)
-    }
-    setTidyConfirmOpen(false)
-  }
-
   const handleReset = () => {
     const imagePaths = getImagePaths(useMindmapStore.getState().nodes)
     resetMindmap()
@@ -53,10 +38,10 @@ export function Toolbar() {
   }
 
   const buttonStyle = {
-    background: 'rgba(255,255,255,0.9)',
-    border: '1px solid rgba(0,0,0,0.1)',
+    background: 'var(--c-glass)',
+    border: '1px solid var(--c-border)',
     borderRadius: 10,
-    color: '#64748b',
+    color: 'var(--c-text-2)',
     cursor: 'pointer',
     width: 36,
     height: 36,
@@ -85,8 +70,8 @@ export function Toolbar() {
       {/* ズームコントロール */}
       <div
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
-          border: '1px solid rgba(0,0,0,0.1)',
+          background: 'var(--c-glass)',
+          border: '1px solid var(--c-border)',
           borderRadius: 14,
           padding: 8,
           display: 'flex',
@@ -107,10 +92,10 @@ export function Toolbar() {
           }}
           onMouseLeave={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background =
-              'rgba(255,255,255,0.9)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+              'var(--c-glass)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--c-text-2)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              'rgba(0,0,0,0.1)'
+              'var(--c-border)'
           }}
           title="ズームイン"
         >
@@ -128,10 +113,10 @@ export function Toolbar() {
           }}
           onMouseLeave={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background =
-              'rgba(255,255,255,0.9)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+              'var(--c-glass)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--c-text-2)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              'rgba(0,0,0,0.1)'
+              'var(--c-border)'
           }}
           title="ズームアウト"
         >
@@ -149,59 +134,32 @@ export function Toolbar() {
           }}
           onMouseLeave={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background =
-              'rgba(255,255,255,0.9)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+              'var(--c-glass)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--c-text-2)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              'rgba(0,0,0,0.1)'
+              'var(--c-border)'
           }}
           title="全体表示"
         >
           <Maximize2 size={16} />
         </button>
-        {!isFree && (
-          <button
-            style={buttonStyle}
-            onClick={() => setTidyConfirmOpen(true)}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background =
-                'rgba(124, 58, 237, 0.2)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#a78bfa'
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                'rgba(124, 58, 237, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background =
-                'rgba(255,255,255,0.9)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-                'rgba(0,0,0,0.1)'
-            }}
-            title={hasSelection ? `選択範囲を整頓 (${selectedCount}個)` : '整頓'}
-          >
-            <LayoutDashboard size={16} />
-          </button>
-        )}
-
-        {/* 整頓↔元の配置トグル */}
-        {!isFree && hasSnapshot && (
-          <button
-            style={buttonStyle}
-            onClick={() => { toggleLayout(); setTimeout(() => fitView({ padding: 0.3, duration: 500 }), 50) }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(124, 58, 237, 0.2)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#a78bfa'
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(124, 58, 237, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.9)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.1)'
-            }}
-            title="整頓↔元の配置を切り替え"
-          >
-            <ArrowLeftRight size={16} />
-          </button>
-        )}
+        {/* 元に戻す／やり直す */}
+        <button
+          style={{ ...buttonStyle, opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'default' }}
+          onClick={undo}
+          disabled={!canUndo}
+          title="元に戻す (⌘Z)"
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          style={{ ...buttonStyle, opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'default' }}
+          onClick={redo}
+          disabled={!canRedo}
+          title="やり直す (⇧⌘Z)"
+        >
+          <Redo2 size={16} />
+        </button>
 
         {/* 画像を追加（クリップボード貼り付けが使えない環境向け） */}
         <button
@@ -213,9 +171,9 @@ export function Toolbar() {
             ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(124, 58, 237, 0.4)'
           }}
           onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.9)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.1)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--c-glass)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--c-text-2)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--c-border)'
           }}
           title="画像を追加"
         >
@@ -233,8 +191,8 @@ export function Toolbar() {
       {/* リセット */}
       <div
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
-          border: '1px solid rgba(0,0,0,0.1)',
+          background: 'var(--c-glass)',
+          border: '1px solid var(--c-border)',
           borderRadius: 14,
           padding: 8,
           backdropFilter: 'blur(16px)',
@@ -252,10 +210,10 @@ export function Toolbar() {
           }}
           onMouseLeave={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background =
-              'rgba(255,255,255,0.9)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+              'var(--c-glass)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--c-text-2)'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              'rgba(0,0,0,0.1)'
+              'var(--c-border)'
           }}
           title="リセット"
         >
@@ -264,18 +222,6 @@ export function Toolbar() {
       </div>
     </motion.div>
 
-    <ConfirmDialog
-      open={tidyConfirmOpen}
-      title={hasSelection ? '選択範囲を整頓' : 'レイアウトを整頓'}
-      description={
-        hasSelection
-          ? `選択中の${selectedCount}個のノードのみ整列されます。`
-          : 'ノードの位置が自動で整列されます。手動で調整した配置はリセットされます。'
-      }
-      confirmLabel="整頓する"
-      onConfirm={handleTidyConfirm}
-      onCancel={() => setTidyConfirmOpen(false)}
-    />
     <ConfirmDialog
       open={confirmOpen}
       title="マインドマップをリセット"

@@ -15,8 +15,8 @@ export function HelpHint() {
         bottom: 32,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: 'rgba(255, 255, 255, 0.88)',
-        border: '1px solid rgba(0,0,0,0.08)',
+        background: 'var(--c-glass)',
+        border: '1px solid var(--c-border)',
         borderRadius: 100,
         padding: '6px 16px',
         backdropFilter: 'blur(12px)',
@@ -37,18 +37,18 @@ export function HelpHint() {
         >
           <kbd
             style={{
-              background: 'rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.1)',
+              background: 'var(--c-hover)',
+              border: '1px solid var(--c-border)',
               borderRadius: 6,
               padding: '2px 8px',
               fontSize: 11,
-              color: '#64748b',
+              color: 'var(--c-text-2)',
               fontFamily: 'inherit',
             }}
           >
             {hint.key}
           </kbd>
-          <span style={{ color: '#475569', fontSize: 11 }}>{hint.desc}</span>
+          <span style={{ color: 'var(--c-text-2)', fontSize: 11 }}>{hint.desc}</span>
         </div>
       ))}
     </motion.div>

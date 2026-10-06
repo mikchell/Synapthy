@@ -1,8 +1,9 @@
 import { Grid2x2, List as ListIcon, Plus, Search } from 'lucide-react'
 import { useMindmapStore } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
+import { ThemeToggle } from '../../../components/ThemeToggle'
 
-export type TopBarVariant = 'recent' | 'library' | 'templates' | 'trash'
+export type TopBarVariant = 'recent' | 'library' | 'trash'
 
 interface Props {
   variant: TopBarVariant
@@ -25,12 +26,10 @@ export function TopBar({
   viewMode,
   onViewModeChange,
 }: Props) {
-  const openTemplateModal = useMindmapStore((s) => s.openTemplateModal)
+  const addSheet = useMindmapStore((s) => s.addSheet)
   const isMobile = useIsMobile()
 
-  const showSearch = variant !== 'templates'
   const showSort = variant === 'library'
-  const showViewToggle = variant !== 'templates'
   const showNewButton = variant === 'recent' || variant === 'library'
 
   return (
@@ -44,33 +43,32 @@ export function TopBar({
         flexWrap: 'wrap',
       }}
     >
-      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1e293b' }}>{title}</h1>
+      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--c-text)' }}>{title}</h1>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {showSearch && (
-          <div style={{ position: 'relative' }}>
-            <Search
-              size={14}
-              color="#94a3b8"
-              style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
-            />
-            <input
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="ファイルを検索"
-              style={{
-                width: isMobile ? 150 : 220,
-                padding: '8px 12px 8px 32px',
-                borderRadius: 10,
-                border: '1px solid rgba(0,0,0,0.1)',
-                fontSize: 13,
-                outline: 'none',
-                background: '#f8fafc',
-                color: '#1e293b',
-              }}
-            />
-          </div>
-        )}
+        <ThemeToggle />
+        <div style={{ position: 'relative' }}>
+          <Search
+            size={14}
+            color="var(--c-text-3)"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
+          />
+          <input
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="ファイルを検索"
+            style={{
+              width: isMobile ? 150 : 220,
+              padding: '8px 12px 8px 32px',
+              borderRadius: 10,
+              border: '1px solid var(--c-border)',
+              fontSize: 13,
+              outline: 'none',
+              background: 'var(--c-bg-subtle)',
+              color: 'var(--c-text)',
+            }}
+          />
+        </div>
 
         {showSort && (
           <select
@@ -79,10 +77,10 @@ export function TopBar({
             style={{
               padding: '7px 10px',
               borderRadius: 10,
-              border: '1px solid rgba(0,0,0,0.1)',
+              border: '1px solid var(--c-border)',
               fontSize: 12,
-              color: '#64748b',
-              background: '#fff',
+              color: 'var(--c-text-2)',
+              background: 'var(--c-surface)',
               cursor: 'pointer',
             }}
           >
@@ -91,30 +89,28 @@ export function TopBar({
           </select>
         )}
 
-        {showViewToggle && (
-          <button
-            onClick={() => onViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}
-            title="表示切替"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              border: '1px solid rgba(0,0,0,0.1)',
-              background: '#fff',
-              color: '#64748b',
-              cursor: 'pointer',
-            }}
-          >
-            {viewMode === 'grid' ? <ListIcon size={15} /> : <Grid2x2 size={15} />}
-          </button>
-        )}
+        <button
+          onClick={() => onViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}
+          title="表示切替"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            border: '1px solid var(--c-border)',
+            background: 'var(--c-surface)',
+            color: 'var(--c-text-2)',
+            cursor: 'pointer',
+          }}
+        >
+          {viewMode === 'grid' ? <ListIcon size={15} /> : <Grid2x2 size={15} />}
+        </button>
 
         {showNewButton && (
           <button
-            onClick={() => openTemplateModal('new')}
+            onClick={() => addSheet()}
             style={{
               display: 'flex',
               alignItems: 'center',

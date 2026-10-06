@@ -25,6 +25,16 @@ export interface MindmapNodeData extends Record<string, unknown> {
   sizeScale?: number
   borderRadius?: number
   isCircle?: boolean
+  // 文字だけのノード（ロジックツリーの中心テーマ以外）に枠線を表示するか。未指定＝表示しない
+  showBorder?: boolean
+  // ノードに付けた画像（文字の上に表示する）。path はストレージ上の保存先、width/height は表示サイズ
+  image?: NodeImage
+}
+
+export interface NodeImage {
+  path: string
+  width: number
+  height: number
 }
 
 // クリップボードから貼り付けた画像ノード（マインドマップのツリー構造には属さない自由配置要素）
@@ -63,11 +73,7 @@ interface MindmapStore {
   edges: Edge[]
   selectedNodeId: string | null
   editingNodeId: string | null
-  defaultNodeColor: NodeColor | null
   isSaving: boolean
-  layoutSnapshot: Node<AnyNodeData>[] | null
-  templateModalOpen: boolean
-  templateModalMode: 'init' | 'new'
 
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
@@ -81,29 +87,25 @@ interface MindmapStore {
   tidyLayout: () => void
   reparentDroppedNode: (nodeId: string) => void
   autoTidyLogicTree: () => void
-  tidySelectedLayout: () => void
-  toggleLayout: () => void
   updateNodeLabel: (id: string, label: string) => void
   updateNodeColor: (id: string, color: NodeColor) => void
   updateNodeMemo: (id: string, memo: string) => void
+  setNodeImage: (id: string, image: NodeImage | null) => void
   updateNodeBorderWidth: (id: string, borderWidth: number) => void
   updateNodeBorderRadius: (id: string, borderRadius: number) => void
   updateNodeIsCircle: (id: string, isCircle: boolean) => void
+  updateNodeShowBorder: (id: string, showBorder: boolean) => void
   updateNodeSize: (id: string, width: number, height: number) => void
   updateNodeSizeScale: (id: string, sizeScale: number) => void
   updateNodeRotation: (id: string, rotation: number) => void
   deleteNode: (id: string) => void
   setSelectedNodeId: (id: string | null) => void
   setEditingNodeId: (id: string | null) => void
-  setDefaultNodeColor: (color: NodeColor | null) => void
   setIsSaving: (v: boolean) => void
   resetMindmap: () => void
 
-  openTemplateModal: (mode: 'init' | 'new') => void
-  closeTemplateModal: () => void
-  setCurrentSheetMapType: (mapType: MapType) => void
   setCurrentView: (view: 'home' | 'editor') => void
-  addSheet: (mapType: MapType) => void
+  addSheet: () => void
   moveSheetToTrash: (id: string) => void
   restoreSheetFromTrash: (id: string) => void
   permanentlyDeleteSheet: (id: string) => void
@@ -249,6 +251,7 @@ function overlapsAnyNode(cx: number, cy: number, size: { w: number; h: number },
 const initialSheet: Sheet = {
   id: crypto.randomUUID(),
   name: 'シート1',
+  mapType: 'linear',
   nodes: makeInitialNodes(),
   edges: [],
   isStarred: false,
@@ -264,6 +267,7 @@ function normalizeSheet(s: Sheet): Sheet {
   const now = new Date().toISOString()
   return {
     ...s,
+    mapType: s.mapType ?? 'linear',
     isStarred: s.isStarred ?? false,
     deletedAt: s.deletedAt ?? null,
     lastOpenedAt: s.lastOpenedAt ?? now,
@@ -283,23 +287,14 @@ export const useMindmapStore = create<MindmapStore>()(
       edges: initialSheet.edges,
       selectedNodeId: null,
       editingNodeId: null,
-      defaultNodeColor: null,
       isSaving: false,
-      layoutSnapshot: null,
-      templateModalOpen: false,
-      templateModalMode: 'init' as const,
 
       onNodesChange: (changes) => {
-        // キーボードでルートノードを削除しようとした場合はシートをゴミ箱へ
+        // 中心テーマ（ルート）は削除できない（ツリー全体と自動整列の起点のため）。削除の変更は取り除く
         const currentNodes = get().nodes
-        const rootRemoved = changes.some(
-          (c) => c.type === 'remove' && currentNodes.find((n) => n.id === c.id)?.data.isRoot
-        )
-        if (rootRemoved) {
-          get().moveSheetToTrash(get().currentSheetId)
-          return
-        }
-        set({ nodes: applyNodeChanges(changes, currentNodes) as Node<MindmapNodeData>[] })
+        const isRootNode = (id: string) => id === 'root' || !!currentNodes.find((n) => n.id === id)?.data.isRoot
+        const allowed = changes.filter((c) => !(c.type === 'remove' && isRootNode(c.id)))
+        set({ nodes: applyNodeChanges(allowed, currentNodes) as Node<MindmapNodeData>[] })
 
         // ロジックツリー：文字の確定やサイズ段階の変更でノードの実際の大きさが変わったら整列し直す
         // （初回の計測＝シートを開いた直後は、既存の配置を勝手に動かさないよう対象外）
@@ -347,7 +342,7 @@ export const useMindmapStore = create<MindmapStore>()(
             : existingChildren[existingChildren.length - 1].position.y + NODE_H + PADDING
 
         const colorIndex = nodes.length % COLORS.length
-        const nodeColor = get().defaultNodeColor ?? COLORS[colorIndex]
+        const nodeColor = COLORS[colorIndex]
         const newId = generateId()
         const parentDepth = parent.data.depth ?? 0
 
@@ -433,7 +428,7 @@ export const useMindmapStore = create<MindmapStore>()(
 
         const position = { x: cx - newSize.w / 2, y: cy - newSize.h / 2 }
         const colorIndex = nodes.length % COLORS.length
-        const nodeColor = get().defaultNodeColor ?? COLORS[colorIndex]
+        const nodeColor = COLORS[colorIndex]
         const newId = generateId()
 
         const newNode: Node<MindmapNodeData> = {
@@ -474,7 +469,7 @@ export const useMindmapStore = create<MindmapStore>()(
         if (!parent || !currentNode) return
 
         const colorIndex = nodes.length % COLORS.length
-        const nodeColor = get().defaultNodeColor ?? COLORS[colorIndex]
+        const nodeColor = COLORS[colorIndex]
         const newId = generateId()
         const parentDepth = parent.data.depth ?? 0
 
@@ -505,6 +500,7 @@ export const useMindmapStore = create<MindmapStore>()(
           nodes: [...applyShifted(nodes, shifted), newNode],
           edges: [...edges.slice(0, insertAt), newEdge, ...edges.slice(insertAt)],
           selectedNodeId: newId,
+          editingNodeId: newId,
         })
         get().autoTidyLogicTree()
       },
@@ -529,7 +525,7 @@ export const useMindmapStore = create<MindmapStore>()(
 
         const newId = generateId()
         const colorIndex = nodes.length % COLORS.length
-        const nodeColor = get().defaultNodeColor ?? COLORS[colorIndex]
+        const nodeColor = COLORS[colorIndex]
 
         // ターゲットとその子孫をH_STEP分右にシフトしてスペースを確保
         const getDescendants = (nodeId: string): string[] => {
@@ -644,30 +640,31 @@ export const useMindmapStore = create<MindmapStore>()(
         get().autoTidyLogicTree()
       },
 
-      // ロジックツリーのときだけ自動整列する（ノードの追加・削除・付け替えの後に呼ぶ）
-      // 自動整列では「整列前に戻す」用のスナップショットを上書きしない
+      // ロジックツリーのときだけ自動整列する（ノードの追加・削除・付け替え・サイズ変更の後に呼ぶ）
       autoTidyLogicTree: () => {
-        const { sheets, currentSheetId, layoutSnapshot } = get()
+        const { sheets, currentSheetId } = get()
         if (sheets.find((s) => s.id === currentSheetId)?.mapType === 'free') return
         get().tidyLayout()
-        set({ layoutSnapshot })
       },
 
       tidyLayout: () => {
         const { nodes, edges } = get()
         const isMobile = window.innerWidth < 768
 
-        const DEFAULT_W = isMobile ? 130 : 180
-        const DEFAULT_H = isMobile ? 44 : 60
-        const V_GAP = isMobile ? 20 : 30   // ノード間の縦の隙間
-        const H_GAP = isMobile ? 40 : 80   // 親右端〜子左端の横の隙間
+        // 計測前のノードのおおよその大きさ
+        // （中心テーマは箱、それ以外は文字だけのノードなので小さい）
+        const DEFAULT_ROOT = { w: isMobile ? 150 : 200, h: isMobile ? 60 : 80 }
+        const DEFAULT_TEXT = { w: 90, h: 34 }
+        const V_GAP = isMobile ? 14 : 18   // ノード間の縦の隙間
+        const H_GAP = isMobile ? 64 : 120  // 親右端〜子左端の横の隙間（途中に分岐点の丸が入る）
 
         // 実際のサイズを取得（リサイズ済みならそのサイズ、未設定はデフォルト）
         const nodeSize = (id: string) => {
           const n = nodes.find((nd) => nd.id === id)
+          const fallback = (n?.data as MindmapNodeData | undefined)?.isRoot ? DEFAULT_ROOT : DEFAULT_TEXT
           return {
-            w: n?.width ?? n?.measured?.width ?? DEFAULT_W,
-            h: n?.height ?? n?.measured?.height ?? DEFAULT_H,
+            w: n?.width ?? n?.measured?.width ?? fallback.w,
+            h: n?.height ?? n?.measured?.height ?? fallback.h,
           }
         }
 
@@ -714,81 +711,7 @@ export const useMindmapStore = create<MindmapStore>()(
             : e
         )
 
-        set({ nodes: repositioned, edges: normalizedEdges, layoutSnapshot: nodes })
-      },
-
-      toggleLayout: () => {
-        const { nodes, layoutSnapshot } = get()
-        if (!layoutSnapshot) return
-        const restored = nodes.map((n) => {
-          const saved = layoutSnapshot.find((s) => s.id === n.id)
-          return saved ? { ...n, position: saved.position } : n
-        })
-        set({ nodes: restored, layoutSnapshot: nodes })
-      },
-
-      tidySelectedLayout: () => {
-        const { nodes, edges } = get()
-        const selectedNodes = nodes.filter((n) => n.selected)
-        if (selectedNodes.length <= 1) return
-
-        const selectedIds = new Set(selectedNodes.map((n) => n.id))
-        const selectedEdges = edges.filter(
-          (e) => selectedIds.has(e.source) && selectedIds.has(e.target)
-        )
-
-        // 選択内に親を持たないノードをサブルートとする
-        const hasParentInSelection = new Set(selectedEdges.map((e) => e.target))
-        const subRoots = selectedNodes.filter((n) => !hasParentInSelection.has(n.id))
-
-        const isMobile = window.innerWidth < 768
-        const DEFAULT_W_S = isMobile ? 130 : 180
-        const DEFAULT_H_S = isMobile ? 44 : 60
-        const V_GAP_S = isMobile ? 20 : 30
-        const H_GAP_S = isMobile ? 40 : 80
-
-        const nodeSize = (id: string) => {
-          const n = nodes.find((nd) => nd.id === id)
-          return {
-            w: n?.width ?? n?.measured?.width ?? DEFAULT_W_S,
-            h: n?.height ?? n?.measured?.height ?? DEFAULT_H_S,
-          }
-        }
-
-        const childrenOf = (id: string) =>
-          selectedEdges.filter((e) => e.source === id).map((e) => e.target)
-
-        const subtreeHeight = (id: string): number => {
-          const children = childrenOf(id)
-          const { h } = nodeSize(id)
-          if (children.length === 0) return h
-          const childTotal = children.reduce((s, c) => s + subtreeHeight(c), 0) + (children.length - 1) * V_GAP_S
-          return Math.max(h, childTotal)
-        }
-
-        const positions: Record<string, { x: number; y: number }> = {}
-
-        const layout = (id: string, centerY: number, x: number) => {
-          const { w, h } = nodeSize(id)
-          positions[id] = { x, y: centerY - h / 2 }
-          const children = childrenOf(id)
-          const totalH = children.reduce((s, c) => s + subtreeHeight(c), 0) + (children.length - 1) * V_GAP_S
-          let curY = centerY - totalH / 2
-          for (const c of children) {
-            const ch = subtreeHeight(c)
-            layout(c, curY + ch / 2, x + w + H_GAP_S)
-            curY += ch + V_GAP_S
-          }
-        }
-
-        for (const subRoot of subRoots) {
-          const { h } = nodeSize(subRoot.id)
-          layout(subRoot.id, subRoot.position.y + h / 2, subRoot.position.x)
-        }
-
-        set({
-          nodes: nodes.map((n) => (positions[n.id] ? { ...n, position: positions[n.id] } : n)),
-        })
+        set({ nodes: repositioned, edges: normalizedEdges })
       },
 
       updateNodeLabel: (id, label) => {
@@ -804,6 +727,19 @@ export const useMindmapStore = create<MindmapStore>()(
           nodes: get().nodes.map((n) =>
             n.id === id ? { ...n, data: { ...n.data, color } } : n
           ),
+        })
+      },
+
+      // ノードに画像を付ける／外す（null で外す）。ストレージ上のファイルの削除は呼び出し側で行う
+      setNodeImage: (id, image) => {
+        set({
+          nodes: get().nodes.map((n) => {
+            if (n.id !== id || n.type !== 'mindmapNode') return n
+            const data = { ...(n.data as MindmapNodeData) }
+            if (image) data.image = image
+            else delete data.image
+            return { ...n, data }
+          }),
         })
       },
 
@@ -827,6 +763,14 @@ export const useMindmapStore = create<MindmapStore>()(
         set({
           nodes: get().nodes.map((n) =>
             n.id === id ? { ...n, data: { ...n.data, borderRadius } } : n
+          ),
+        })
+      },
+
+      updateNodeShowBorder: (id, showBorder) => {
+        set({
+          nodes: get().nodes.map((n) =>
+            n.id === id ? { ...n, data: { ...n.data, showBorder } } : n
           ),
         })
       },
@@ -889,11 +833,8 @@ export const useMindmapStore = create<MindmapStore>()(
       deleteNode: (id) => {
         const { nodes, edges } = get()
         const targetNode = nodes.find((n) => n.id === id)
-        // ルートノード削除 = 全ノードが消える → シートをゴミ箱へ
-        if (id === 'root' || targetNode?.data.isRoot) {
-          get().moveSheetToTrash(get().currentSheetId)
-          return
-        }
+        // 中心テーマ（ルート）は削除できない（シートも消さない）
+        if (id === 'root' || targetNode?.data.isRoot) return
         const parentEdge = edges.find((e) => e.target === id)
         const childEdges = edges.filter((e) => e.source === id)
 
@@ -943,7 +884,6 @@ export const useMindmapStore = create<MindmapStore>()(
 
       setEditingNodeId: (id) => set({ editingNodeId: id }),
 
-      setDefaultNodeColor: (color) => set({ defaultNodeColor: color }),
       setIsSaving: (v) => set({ isSaving: v }),
 
       resetMindmap: () => {
@@ -951,21 +891,9 @@ export const useMindmapStore = create<MindmapStore>()(
         set({ nodes: fresh, edges: [], selectedNodeId: null })
       },
 
-      openTemplateModal: (mode) => set({ templateModalOpen: true, templateModalMode: mode }),
-      closeTemplateModal: () => set({ templateModalOpen: false }),
-
       setCurrentView: (view) => set({ currentView: view }),
 
-      setCurrentSheetMapType: (mapType) => {
-        const { sheets, currentSheetId, nodes } = get()
-        set({
-          sheets: sheets.map((s) => s.id === currentSheetId ? { ...s, mapType } : s),
-          templateModalOpen: false,
-          selectedNodeId: nodes[0]?.id ?? null,
-        })
-      },
-
-      addSheet: (mapType) => {
+      addSheet: () => {
         const { sheets, currentSheetId, nodes, edges } = get()
         const updatedSheets = sheets.map((s) =>
           s.id === currentSheetId ? { ...s, nodes, edges } : s
@@ -976,7 +904,7 @@ export const useMindmapStore = create<MindmapStore>()(
         const newSheet: Sheet = {
           id: generateSheetId(),
           name: `シート${activeCount + 1}`,
-          mapType,
+          mapType: 'linear',
           nodes: initialNodes,
           edges: [],
           isStarred: false,
@@ -992,7 +920,6 @@ export const useMindmapStore = create<MindmapStore>()(
           nodes: newSheet.nodes,
           edges: newSheet.edges,
           selectedNodeId: initialNodes[0]?.id ?? null,
-          templateModalOpen: false,
         })
       },
 
@@ -1059,7 +986,6 @@ export const useMindmapStore = create<MindmapStore>()(
           nodes: target.nodes,
           edges: target.edges,
           selectedNodeId: null,
-          ...(!target.mapType ? { templateModalOpen: true, templateModalMode: 'init' as const } : {}),
         })
       },
 
@@ -1072,19 +998,12 @@ export const useMindmapStore = create<MindmapStore>()(
           sheets.find((s) => s.id === savedId && !s.deletedAt) ??
           sheets.find((s) => !s.deletedAt) ??
           sheets[0]
-        // すでにユーザーがテンプレートを選択済み（モーダルが閉じられている）場合は再表示しない
-        const alreadyClosed = !get().templateModalOpen
         set({
           sheets,
           currentSheetId: current.id,
           nodes: current.nodes,
           edges: current.edges,
           selectedNodeId: null,
-          ...(!current.mapType && !alreadyClosed
-            ? { templateModalOpen: true, templateModalMode: 'init' as const }
-            : current.mapType
-              ? { templateModalOpen: false }
-              : {}),
         })
       },
 
@@ -1125,7 +1044,6 @@ export const useMindmapStore = create<MindmapStore>()(
         ),
         currentSheetId: state.currentSheetId,
         currentView: state.currentView,
-        defaultNodeColor: state.defaultNodeColor,
         folders: state.folders,
       }),
       onRehydrateStorage: () => (state) => {
@@ -1136,10 +1054,6 @@ export const useMindmapStore = create<MindmapStore>()(
         if (current) {
           state.nodes = current.nodes
           state.edges = current.edges
-          if (!current.mapType) {
-            state.templateModalOpen = true
-            state.templateModalMode = 'init'
-          }
         }
       },
     }

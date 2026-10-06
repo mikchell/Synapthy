@@ -1,4 +1,4 @@
-import { Clock, Folder as FolderIcon, LayoutGrid, LayoutTemplate, LogOut, Pencil, Plus, Star, Trash2, X, type LucideIcon } from 'lucide-react'
+import { Clock, Folder as FolderIcon, LayoutGrid, LogOut, Pencil, Plus, Star, Trash2, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore, type Folder } from '../../mindmap/store/mindmapStore'
@@ -6,7 +6,7 @@ import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
 import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
 
-export type HomeSection = 'recent' | 'all' | 'starred' | 'templates' | 'trash' | 'folder'
+export type HomeSection = 'recent' | 'all' | 'starred' | 'trash' | 'folder'
 
 interface Props {
   section: HomeSection
@@ -19,7 +19,6 @@ const NAV_ITEMS: { key: Exclude<HomeSection, 'folder'>; label: string; icon: Luc
   { key: 'recent', label: '最近使用した項目', icon: Clock },
   { key: 'all', label: 'すべてのマップ', icon: LayoutGrid },
   { key: 'starred', label: 'スター付き', icon: Star },
-  { key: 'templates', label: 'その他のテンプレート', icon: LayoutTemplate },
   { key: 'trash', label: 'ゴミ箱', icon: Trash2 },
 ]
 
@@ -30,8 +29,8 @@ const NAV_BTN = (isActive: boolean): React.CSSProperties => ({
   padding: '9px 12px',
   borderRadius: 10,
   border: 'none',
-  background: isActive ? 'rgba(124,58,237,0.1)' : 'transparent',
-  color: isActive ? '#7c3aed' : '#475569',
+  background: isActive ? 'var(--c-accent-soft)' : 'transparent',
+  color: isActive ? 'var(--c-accent)' : 'var(--c-text-2)',
   fontSize: 13,
   fontWeight: isActive ? 600 : 500,
   cursor: 'pointer',
@@ -92,14 +91,14 @@ function FolderRow({
         display: 'flex',
         alignItems: 'center',
         borderRadius: 10,
-        outline: dragOver ? '2px solid #7c3aed' : 'none',
+        outline: dragOver ? '2px solid var(--c-accent)' : 'none',
         outlineOffset: -2,
-        background: dragOver ? 'rgba(124,58,237,0.08)' : 'transparent',
+        background: dragOver ? 'var(--c-accent-soft)' : 'transparent',
       }}
     >
       {editing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', width: '100%' }}>
-          <FolderIcon size={16} color="#94a3b8" />
+          <FolderIcon size={16} color="var(--c-text-3)" />
           <input
             ref={inputRef}
             value={draft}
@@ -138,7 +137,7 @@ function FolderRow({
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 20, height: 20, borderRadius: 6, border: 'none',
-              background: '#fafbfe', color: '#94a3b8', cursor: 'pointer', padding: 0,
+              background: 'var(--c-bg-subtle)', color: 'var(--c-text-3)', cursor: 'pointer', padding: 0,
             }}
           >
             <Pencil size={11} />
@@ -149,7 +148,7 @@ function FolderRow({
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 20, height: 20, borderRadius: 6, border: 'none',
-              background: '#fafbfe', color: '#94a3b8', cursor: 'pointer', padding: 0,
+              background: 'var(--c-bg-subtle)', color: 'var(--c-text-3)', cursor: 'pointer', padding: 0,
             }}
           >
             <X size={11} />
@@ -197,8 +196,8 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid rgba(0,0,0,0.08)',
-        background: '#fafbfe',
+        borderRight: '1px solid var(--c-border)',
+        background: 'var(--c-bg-subtle)',
         padding: '20px 12px',
       }}
     >
@@ -231,7 +230,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             padding: '14px 12px 4px',
           }}
         >
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: 0.4 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-text-3)', letterSpacing: 0.4 }}>
             フォルダ
           </span>
           <button
@@ -240,7 +239,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 18, height: 18, borderRadius: 5, border: 'none',
-              background: 'transparent', color: '#94a3b8', cursor: 'pointer', padding: 0,
+              background: 'transparent', color: 'var(--c-text-3)', cursor: 'pointer', padding: 0,
             }}
           >
             <Plus size={13} />
@@ -258,7 +257,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
 
         {addingFolder && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
-            <FolderIcon size={16} color="#94a3b8" />
+            <FolderIcon size={16} color="var(--c-text-3)" />
             <input
               ref={newFolderInputRef}
               value={newFolderName}
@@ -290,7 +289,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
             alignItems: 'center',
             gap: 8,
             padding: '10px 8px 0',
-            borderTop: '1px solid rgba(0,0,0,0.08)',
+            borderTop: '1px solid var(--c-border)',
           }}
         >
           {user.user_metadata?.avatar_url && (
@@ -306,7 +305,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
               minWidth: 0,
               fontSize: 12,
               fontWeight: 600,
-              color: '#1e293b',
+              color: 'var(--c-text)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -326,7 +325,7 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
               borderRadius: 8,
               border: 'none',
               background: 'transparent',
-              color: '#94a3b8',
+              color: 'var(--c-text-3)',
               cursor: 'pointer',
               flexShrink: 0,
             }}

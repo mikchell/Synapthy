@@ -13,8 +13,8 @@ export function LoginScreen() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#ffffff',
-        backgroundImage: `radial-gradient(circle, rgba(148,163,184,0.5) 1.5px, transparent 1.5px)`,
+        background: 'var(--c-bg)',
+        backgroundImage: `radial-gradient(circle, var(--c-dot) 1.5px, transparent 1.5px)`,
         backgroundSize: '24px 24px',
       }}
     >
@@ -23,8 +23,8 @@ export function LoginScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 28 }}
         style={{
-          background: 'rgba(255,255,255,0.95)',
-          border: '1px solid rgba(0,0,0,0.08)',
+          background: 'var(--c-glass)',
+          border: '1px solid var(--c-border)',
           borderRadius: 24,
           padding: '48px 40px',
           width: 360,
@@ -50,7 +50,7 @@ export function LoginScreen() {
             >
               Synaptique
             </h1>
-            <p style={{ margin: '6px 0 0', color: '#94a3b8', fontSize: 13 }}>
+            <p style={{ margin: '6px 0 0', color: 'var(--c-text-3)', fontSize: 13 }}>
               アイデアをつなげよう
             </p>
           </div>
@@ -63,8 +63,8 @@ export function LoginScreen() {
             width: '100%',
             padding: '12px 20px',
             borderRadius: 12,
-            border: '1px solid rgba(0,0,0,0.12)',
-            background: '#ffffff',
+            border: '1px solid var(--c-border)',
+            background: 'var(--c-surface)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -72,17 +72,17 @@ export function LoginScreen() {
             gap: 10,
             fontSize: 14,
             fontWeight: 600,
-            color: '#1e293b',
+            color: 'var(--c-text)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)'
+            e.currentTarget.style.borderColor = 'var(--c-border)'
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'
+            e.currentTarget.style.borderColor = 'var(--c-border)'
           }}
         >
           <GoogleIcon />

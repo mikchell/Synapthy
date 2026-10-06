@@ -22,7 +22,7 @@ const ACTION_BTN: CSSProperties = {
   height: 26,
   borderRadius: 8,
   border: 'none',
-  background: 'rgba(255,255,255,0.95)',
+  background: 'var(--c-glass)',
   boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
   cursor: 'pointer',
   padding: 0,
@@ -83,8 +83,8 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
           display: 'flex',
           flexDirection: isList ? 'row' : 'column',
           alignItems: isList ? 'center' : 'stretch',
-          background: '#ffffff',
-          border: '1px solid rgba(0,0,0,0.08)',
+          background: 'var(--c-surface)',
+          border: '1px solid var(--c-border)',
           borderRadius: 14,
           overflow: 'hidden',
           cursor: variant === 'trash' ? 'default' : 'pointer',
@@ -98,9 +98,9 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
             width: isList ? 110 : '100%',
             height: isList ? 72 : 130,
             flexShrink: 0,
-            background: '#f8faff',
-            borderRight: isList ? '1px solid rgba(0,0,0,0.06)' : 'none',
-            borderBottom: isList ? 'none' : '1px solid rgba(0,0,0,0.06)',
+            background: 'var(--c-bg-subtle)',
+            borderRight: isList ? '1px solid var(--c-border)' : 'none',
+            borderBottom: isList ? 'none' : '1px solid var(--c-border)',
           }}
         >
           <MapThumbnail nodes={sheet.nodes} edges={sheet.edges} mapType={sheet.mapType} />
@@ -122,7 +122,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                 width: '100%',
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#1e293b',
+                color: 'var(--c-text)',
                 border: '1px solid rgba(124,58,237,0.4)',
                 borderRadius: 6,
                 padding: '2px 6px',
@@ -135,7 +135,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                 margin: 0,
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#1e293b',
+                color: 'var(--c-text)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -144,7 +144,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
               {sheet.name}
             </p>
           )}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#94a3b8' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--c-text-3)' }}>
             最終編集: {formatRelativeTime(sheet.updatedAt)}
           </p>
         </div>
@@ -164,7 +164,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                   title="名前を変更"
                   style={ACTION_BTN}
                 >
-                  <Pencil size={12} color="#64748b" />
+                  <Pencil size={12} color="var(--c-text-2)" />
                 </button>
                 <select
                   value={sheet.folderId ?? ''}
@@ -176,9 +176,9 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                     height: 26,
                     borderRadius: 8,
                     border: 'none',
-                    background: 'rgba(255,255,255,0.95)',
+                    background: 'var(--c-glass)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                    color: '#64748b',
+                    color: 'var(--c-text-2)',
                     fontSize: 10,
                     padding: '0 4px',
                     cursor: 'pointer',
@@ -196,7 +196,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                 >
                   <Star
                     size={13}
-                    color={sheet.isStarred ? '#f59e0b' : '#94a3b8'}
+                    color={sheet.isStarred ? '#f59e0b' : 'var(--c-text-3)'}
                     fill={sheet.isStarred ? '#f59e0b' : 'none'}
                   />
                 </button>
@@ -205,7 +205,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                   title="ゴミ箱に入れる"
                   style={ACTION_BTN}
                 >
-                  <Trash2 size={13} color="#64748b" />
+                  <Trash2 size={13} color="var(--c-text-2)" />
                 </button>
               </>
             ) : (
@@ -215,7 +215,7 @@ export function MapCard({ sheet, viewMode, variant }: Props) {
                   title="元に戻す"
                   style={ACTION_BTN}
                 >
-                  <RotateCcw size={13} color="#64748b" />
+                  <RotateCcw size={13} color="var(--c-text-2)" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmOpen(true) }}

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { useMindmapStore, type Folder, type Sheet } from '../store/mindmapStore'
+import { resetHistory } from '../history'
 import {
   fetchSheets,
   upsertSheet,
@@ -52,6 +53,8 @@ export function useSheetsSync(user: User | null) {
       .then(([fetchedSheets, fetchedFolders]) => {
         if (fetchedSheets.length > 0) {
           loadSheets(fetchedSheets)
+          // サーバーから読み込んだ内容を「元に戻す」の起点にする（読み込み前の状態には戻さない）
+          resetHistory()
           prevSheetIdsRef.current = fetchedSheets.map((s) => s.id)
           prevMetaRef.current = Object.fromEntries(fetchedSheets.map((s) => [s.id, metaKeyOf(s)]))
         } else {

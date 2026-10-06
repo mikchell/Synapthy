@@ -6,6 +6,7 @@ import { useIsMobile } from '../../../hooks/useIsMobile'
 import { useMindmapStore } from '../store/mindmapStore'
 import { ConfirmDialog } from './ConfirmDialog'
 import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
+import { ThemeToggle } from '../../../components/ThemeToggle'
 
 export function Header() {
   const { user, signOut } = useAuth()
@@ -30,8 +31,8 @@ export function Header() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: isMobile ? '0 16px' : '0 24px',
-          background: 'rgba(255, 255, 255, 0.9)',
-          borderBottom: '1px solid rgba(0,0,0,0.08)',
+          background: 'var(--c-glass)',
+          borderBottom: '1px solid var(--c-border)',
           backdropFilter: 'blur(20px)',
           zIndex: 200,
         }}
@@ -64,12 +65,13 @@ export function Header() {
 
         {/* 右側 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
+          <ThemeToggle />
           {/* 保存状態 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {isSaving ? (
               <>
-                <Loader2 size={13} color="#94a3b8" style={{ animation: 'spin 1s linear infinite' }} />
-                <span style={{ color: '#94a3b8', fontSize: isMobile ? 11 : 12, fontWeight: 500 }}>保存中...</span>
+                <Loader2 size={13} color="var(--c-text-3)" style={{ animation: 'spin 1s linear infinite' }} />
+                <span style={{ color: 'var(--c-text-3)', fontSize: isMobile ? 11 : 12, fontWeight: 500 }}>保存中...</span>
               </>
             ) : (
               <>
@@ -96,11 +98,11 @@ export function Header() {
                   alignItems: 'center',
                   gap: 4,
                   background: 'none',
-                  border: '1px solid rgba(0,0,0,0.1)',
+                  border: '1px solid var(--c-border)',
                   borderRadius: 8,
                   padding: '4px 10px',
                   cursor: 'pointer',
-                  color: '#64748b',
+                  color: 'var(--c-text-2)',
                   fontSize: isMobile ? 11 : 12,
                   fontWeight: 500,
                 }}

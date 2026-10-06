@@ -7,7 +7,6 @@ import { useIsMobile } from '../../../hooks/useIsMobile'
 import { Sidebar, type HomeSection } from './Sidebar'
 import { TopBar, type TopBarVariant } from './TopBar'
 import { MapGrid } from './MapGrid'
-import { TemplatesSection } from './TemplatesSection'
 import { TrashView } from './TrashView'
 import {
   getActiveSheets,
@@ -22,7 +21,6 @@ const SECTION_TITLE: Record<StaticSection, string> = {
   recent: '最近使用した項目',
   all: 'すべてのマップ',
   starred: 'スター付き',
-  templates: 'その他のテンプレート',
   trash: 'ゴミ箱',
 }
 
@@ -30,7 +28,6 @@ const SECTION_EMPTY_MESSAGE: Record<StaticSection, string> = {
   recent: 'まだマップがありません',
   all: 'まだマップがありません',
   starred: 'スターしたマップはまだありません',
-  templates: '',
   trash: 'ゴミ箱は空です',
 }
 
@@ -38,7 +35,6 @@ const SECTION_TOPBAR_VARIANT: Record<StaticSection, TopBarVariant> = {
   recent: 'recent',
   all: 'library',
   starred: 'library',
-  templates: 'templates',
   trash: 'trash',
 }
 
@@ -94,7 +90,7 @@ export function HomeScreen() {
   const topBarVariant: TopBarVariant = section === 'folder' ? 'library' : SECTION_TOPBAR_VARIANT[section]
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#ffffff' }}>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--c-bg)' }}>
       {isMobile ? (
         <AnimatePresence>
           {sidebarOpen && (
@@ -151,9 +147,9 @@ export function HomeScreen() {
               marginBottom: 16,
               padding: '6px 12px',
               borderRadius: 8,
-              border: '1px solid rgba(0,0,0,0.1)',
-              background: '#fff',
-              color: '#475569',
+              border: '1px solid var(--c-border)',
+              background: 'var(--c-surface)',
+              color: 'var(--c-text-2)',
               fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
@@ -174,9 +170,7 @@ export function HomeScreen() {
           onViewModeChange={setViewMode}
         />
 
-        {section === 'templates' ? (
-          <TemplatesSection />
-        ) : section === 'trash' ? (
+        {section === 'trash' ? (
           <TrashView sheets={filteredSheets} viewMode={viewMode} />
         ) : (
           <MapGrid

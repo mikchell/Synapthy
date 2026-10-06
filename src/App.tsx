@@ -1,15 +1,16 @@
 import { Toaster } from 'sonner'
 import { MindmapCanvas } from './features/mindmap/components/MindmapCanvas'
-import { TemplateSelectModal } from './features/mindmap/components/TemplateSelectModal'
 import { useSheetsSync } from './features/mindmap/hooks/useSheetsSync'
 import { useMindmapStore } from './features/mindmap/store/mindmapStore'
 import { HomeScreen } from './features/home/components/HomeScreen'
 import { LoginScreen } from './features/auth/LoginScreen'
 import { useAuth } from './features/auth/useAuth'
+import { useTheme } from './lib/theme'
 
 function App() {
   const { user, loading } = useAuth()
   const currentView = useMindmapStore((s) => s.currentView)
+  const theme = useTheme((s) => s.theme)
 
   useSheetsSync(user ?? null)
 
@@ -24,8 +25,7 @@ function App() {
       ) : (
         <MindmapCanvas />
       )}
-      <TemplateSelectModal />
-      <Toaster position="bottom-right" richColors />
+      <Toaster position="bottom-right" richColors theme={theme} />
     </>
   )
 }
