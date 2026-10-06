@@ -222,6 +222,20 @@ docs/                   # 設計・運用のドキュメント
 
 ---
 
+## 画像クレジット
+
+ホームのサムネイルに選べるテンプレート画像（`public/thumbnails/` の56点）は、次のものを同梱しています。作品ごとの出典・ライセンスは [docs/ASSETS.md](docs/ASSETS.md) にまとめています。
+
+| 種類 | 点数 | ライセンス・出典 |
+|---|---|---|
+| 風景・抽象 | 12 | [Unsplash](https://unsplash.com/) の写真（[Unsplash License](https://unsplash.com/license)） |
+| 名画・水彩画・日本美術 | 34 | パブリックドメイン / CC0（[Wikimedia Commons](https://commons.wikimedia.org/) で表示を確認） |
+| 宇宙 | 10 | NASA の画像（NASA, ESA, CSA, STScI などのクレジット。原則としてパブリックドメイン） |
+
+画像のライセンス表示は、2026年10月6日に Wikimedia Commons の API で再確認しました（名画・水彩画・日本美術・宇宙の44点は、すべて Public domain または CC0）。
+
+---
+
 ## ドキュメント
 
 | ファイル | 内容 |
