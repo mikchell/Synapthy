@@ -1,21 +1,14 @@
 import { motion } from 'framer-motion'
-import { HelpCircle, Loader2, LogOut, Save } from 'lucide-react'
-import { useState } from 'react'
-import { useAuth } from '../../auth/useAuth'
+import { Loader2, Save } from 'lucide-react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { useMindmapStore } from '../store/mindmapStore'
-import { ConfirmDialog } from './ConfirmDialog'
 import { SynaptiqueIcon, WORDMARK_COLOR } from '../../../components/SynaptiqueIcon'
-import { ThemeToggle } from '../../../components/ThemeToggle'
-import { useTutorialStore } from '../../tutorial/tutorialStore'
+import { ExportMenu } from './ExportMenu'
 
 export function Header() {
-  const { user, signOut } = useAuth()
   const isMobile = useIsMobile()
   const isSaving = useMindmapStore((s) => s.isSaving)
   const setCurrentView = useMindmapStore((s) => s.setCurrentView)
-  const startTutorial = useTutorialStore((s) => s.start)
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
   return (
     <>
@@ -65,31 +58,9 @@ export function Header() {
           </span>
         </button>
 
-        {/* 右側 */}
+        {/* 右側：書き出しと保存状態（ログアウト・使い方・テーマの切替は、サイドバーの下部） */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
-          <button
-            onClick={startTutorial}
-            data-tour="tutorial-help"
-            title="使い方"
-            aria-label="使い方"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 30,
-              height: 30,
-              flexShrink: 0,
-              borderRadius: 8,
-              border: '1px solid var(--c-border)',
-              background: 'none',
-              color: 'var(--c-text-2)',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            <HelpCircle size={15} />
-          </button>
-          <ThemeToggle />
+          <ExportMenu />
           {/* 保存状態 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {isSaving ? (
@@ -105,48 +76,8 @@ export function Header() {
             )}
           </div>
 
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
-              {user.user_metadata?.avatar_url && (
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt="avatar"
-                  style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
-                />
-              )}
-              <button
-                onClick={() => setLogoutConfirmOpen(true)}
-                title="ログアウト"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: 'none',
-                  border: '1px solid var(--c-border)',
-                  borderRadius: 8,
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                  color: 'var(--c-text-2)',
-                  fontSize: isMobile ? 11 : 12,
-                  fontWeight: 500,
-                }}
-              >
-                <LogOut size={13} />
-                ログアウト
-              </button>
-            </div>
-          )}
         </div>
       </motion.header>
-
-      <ConfirmDialog
-        open={logoutConfirmOpen}
-        title="ログアウト"
-        description="ログアウトしますか？ローカルの変更は保存済みです。"
-        confirmLabel="ログアウト"
-        onConfirm={() => { setLogoutConfirmOpen(false); signOut() }}
-        onCancel={() => setLogoutConfirmOpen(false)}
-      />
 
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </>

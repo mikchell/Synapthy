@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Folder as FolderIcon, Home, PanelLeftClose, PanelLeftOpen, Plus, Trash2 } from 'lucide-react'
+import { Folder as FolderIcon, HelpCircle, Home, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun, Trash2 } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useMindmapStore, type Sheet } from '../store/mindmapStore'
 import { getActiveSheets } from '../../home/utils/sheetSelectors'
 import { MapThumbnail } from '../../home/components/MapThumbnail'
+import { useAuth } from '../../auth/useAuth'
+import { useTheme } from '../../../lib/theme'
+import { useTutorialStore } from '../../tutorial/tutorialStore'
+import { ConfirmDialog } from './ConfirmDialog'
 
 export const SIDEBAR_WIDTH = 240
 export const SIDEBAR_RAIL_WIDTH = 48
@@ -184,13 +188,106 @@ function GroupLabel({ name, showIcon }: { name: string; showIcon: boolean }) {
   )
 }
 
+// サイドバーの下部：使い方・テーマの切替・ログイン中のユーザー（ログアウト）
+// アプリ全体に関わる操作なので、ヘッダーではなくここに置く（ホーム画面のサイドバーと同じ並び）
+// compact のときは、閉じたサイドバー（アイコンの帯）用に、アイコンだけを縦に並べる
+function SidebarFooter({ compact, onLogout, onAfterAction }: { compact: boolean; onLogout: () => void; onAfterAction: () => void }) {
+  const { user } = useAuth()
+  const theme = useTheme((s) => s.theme)
+  const toggleTheme = useTheme((s) => s.toggleTheme)
+  const startTutorial = useTutorialStore((s) => s.start)
+
+  // 押すと切り替わる先の名前だけを出す（読み上げには、操作の内容も伝える）
+  const themeLabel = theme === 'dark' ? 'ライトモード' : 'ダークモード'
+  const themeAriaLabel = `${themeLabel}にする`
+  const ThemeIcon = theme === 'dark' ? Sun : Moon
+  const userName = user?.user_metadata?.full_name ?? user?.email ?? 'ユーザー'
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined
+  const handleHelp = () => { startTutorial(); onAfterAction() }
+
+  if (compact) {
+    return (
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <button onClick={handleHelp} data-tour="tutorial-help" title="使い方" aria-label="使い方" style={ICON_BTN}>
+          <HelpCircle size={16} />
+        </button>
+        <button onClick={toggleTheme} title={themeLabel} aria-label={themeAriaLabel} style={ICON_BTN}>
+          <ThemeIcon size={16} />
+        </button>
+        {user && (
+          <button onClick={onLogout} title="ログアウト" aria-label="ログアウト" style={ICON_BTN}>
+            <LogOut size={16} />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: 8, marginTop: 4 }}>
+      <button onClick={handleHelp} data-tour="tutorial-help" style={ITEM_BTN(false)}>
+        <HelpCircle size={16} />
+        使い方
+      </button>
+      <button onClick={toggleTheme} aria-label={themeAriaLabel} style={ITEM_BTN(false)}>
+        <ThemeIcon size={16} />
+        {themeLabel}
+      </button>
+      {user && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 8px 0' }}>
+          {avatarUrl && (
+            <img src={avatarUrl} alt="avatar" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+          )}
+          <span
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--c-text)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {userName}
+          </span>
+          <button onClick={onLogout} title="ログアウト" aria-label="ログアウト" style={{ ...ICON_BTN, width: 26, height: 26, color: 'var(--c-text-3)' }}>
+            <LogOut size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   isMobile: boolean
 }
 
-export function EditorSidebar({ open, onOpenChange, isMobile }: Props) {
+// ログアウトの確認ダイアログは、アニメーションする要素（transform を持つ親）の外に出すため、ここで1つだけ持つ
+export function EditorSidebar(props: Props) {
+  const { signOut } = useAuth()
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
+
+  return (
+    <>
+      <EditorSidebarView {...props} onRequestLogout={() => setLogoutConfirmOpen(true)} />
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="ログアウト"
+        description="ログアウトしますか？ローカルの変更は保存済みです。"
+        confirmLabel="ログアウト"
+        onConfirm={() => { setLogoutConfirmOpen(false); signOut() }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
+    </>
+  )
+}
+
+function EditorSidebarView({ open, onOpenChange, isMobile, onRequestLogout }: Props & { onRequestLogout: () => void }) {
   const sheets = useMindmapStore(useShallow((s) => s.sheets))
   const folders = useMindmapStore(useShallow((s) => s.folders))
   const currentSheetId = useMindmapStore((s) => s.currentSheetId)
@@ -251,6 +348,7 @@ export function EditorSidebar({ open, onOpenChange, isMobile }: Props) {
         <button onClick={handleAdd} title="新しいシート" style={ICON_BTN}>
           <Plus size={16} />
         </button>
+        <SidebarFooter compact onLogout={onRequestLogout} onAfterAction={() => {}} />
       </div>
     )
   }
@@ -307,6 +405,8 @@ export function EditorSidebar({ open, onOpenChange, isMobile }: Props) {
           </DropGroup>
         ))}
       </nav>
+
+      <SidebarFooter compact={false} onLogout={onRequestLogout} onAfterAction={() => { if (isMobile) onOpenChange(false) }} />
     </div>
   )
 
@@ -349,6 +449,7 @@ export function EditorSidebarOpenButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       title="サイドバーを開く"
+      data-tour="editor-sidebar-open"
       style={{
         ...ICON_BTN,
         position: 'fixed',

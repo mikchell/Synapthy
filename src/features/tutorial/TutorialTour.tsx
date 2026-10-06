@@ -121,7 +121,7 @@ export function TutorialTour() {
   const cardRef = useRef<HTMLDivElement>(null)
   const primaryRef = useRef<HTMLButtonElement>(null)
   const [cardH, setCardH] = useState(200)
-  const rect = useTargetRect(active ? step?.target : undefined)
+  const rect = useTargetRect(active ? (isMobile && step?.mobileTarget ? step.mobileTarget : step?.target) : undefined)
 
   // ステップに合わせて、画面（ホーム／編集）を切り替える
   useEffect(() => {

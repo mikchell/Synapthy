@@ -4,6 +4,8 @@ export interface TutorialStep {
   // どちらの画面で見せるか。ステップが変わると、画面も自動で切り替わる
   view: 'home' | 'editor'
   target?: string
+  // モバイルでは、対象が違うとき（画面に出ていない部品の代わりに、それを開くボタンなど）
+  mobileTarget?: string
   title: string
   body: string
   // モバイルでは別の文面にしたいとき
@@ -108,7 +110,9 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'done',
     view: 'editor',
     target: '[data-tour="tutorial-help"]',
+    mobileTarget: '[data-tour="editor-sidebar-open"]',
     title: '準備ができました',
-    body: 'この「？」の「使い方」ボタンから、いつでもこのガイドを見直せます。さっそく、マップを作ってみましょう。',
+    body: '左のサイドバーの下にある「使い方」ボタンから、いつでもこのガイドを見直せます。さっそく、マップを作ってみましょう。',
+    mobileBody: 'このボタンでサイドバーを開くと、いちばん下に「使い方」ボタンがあります。いつでもこのガイドを見直せます。さっそく、マップを作ってみましょう。',
   },
 ]
