@@ -41,7 +41,7 @@ export function MapThumbnail({ sheetId, thumbnailPath }: Props) {
   const url = templateSrc ?? (thumbnailPath && !isTemplatePath(thumbnailPath) && loaded?.path === thumbnailPath && failedPath !== thumbnailPath ? loaded.url : null)
 
   return (
-    <div style={{ width: '100%', height: '100%', background: pastelColor(sheetId) }}>
+    <div style={{ position: 'absolute', inset: 0, background: pastelColor(sheetId) }}>
       {url && (
         <img
           src={url}
