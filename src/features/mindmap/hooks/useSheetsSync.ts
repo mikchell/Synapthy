@@ -126,10 +126,18 @@ export function useSheetsSync(user: User | null) {
     // メタ情報が実際に変わったシートのみ再送信（無関係なシートのupdated_atを更新しない）
     const changed = sheets.filter((s) => prevMetaRef.current[s.id] !== metaKeyOf(s))
     if (changed.length > 0) {
-      setIsSaving(true)
-      if (sheetTimerRef.current) clearTimeout(sheetTimerRef.current)
-      sheetTimerRef.current = setTimeout(() => {
-        const payload = changed.map((s) =>
+      // ゴミ箱の入れ忘れ/復元漏れを防ぐため、deletedAtが変わったものはデバウンスせず即保存する
+      // （デバウンス中にリロードされるとサーバー側に未反映のままとなり、再読込時に古い状態で復活してしまう）
+      const isTrashChange = (s: Sheet) => {
+        const prevDeletedAt = prevMetaRef.current[s.id]?.split('|')[2] ?? ''
+        return prevDeletedAt !== (s.deletedAt ?? '')
+      }
+      const trashChanged = changed.filter(isTrashChange)
+      const otherChanged = changed.filter((s) => !isTrashChange(s))
+
+      if (trashChanged.length > 0) {
+        setIsSaving(true)
+        const payload = trashChanged.map((s) =>
           s.id === currentSheetId ? { ...s, nodes: n, edges: e } : s
         )
         upsertSheetsBatch(payload)
@@ -138,7 +146,23 @@ export function useSheetsSync(user: User | null) {
             payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))
           })
           .catch(() => { setIsSaving(false); toast.error('シートの保存に失敗しました') })
-      }, SHEET_DEBOUNCE_MS)
+      }
+
+      if (otherChanged.length > 0) {
+        setIsSaving(true)
+        if (sheetTimerRef.current) clearTimeout(sheetTimerRef.current)
+        sheetTimerRef.current = setTimeout(() => {
+          const payload = otherChanged.map((s) =>
+            s.id === currentSheetId ? { ...s, nodes: n, edges: e } : s
+          )
+          upsertSheetsBatch(payload)
+            .then(() => {
+              setIsSaving(false)
+              payload.forEach((s) => useMindmapStore.getState().touchSheetUpdatedAt(s.id))
+            })
+            .catch(() => { setIsSaving(false); toast.error('シートの保存に失敗しました') })
+        }, SHEET_DEBOUNCE_MS)
+      }
     }
 
     prevSheetIdsRef.current = currentIds
