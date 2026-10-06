@@ -2,6 +2,7 @@ import { Grid2x2, List as ListIcon, Plus, Search } from 'lucide-react'
 import { useMindmapStore } from '../../mindmap/store/mindmapStore'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ThemeToggle } from '../../../components/ThemeToggle'
+import { notifyLimit } from '../../../lib/limits'
 
 export type TopBarVariant = 'recent' | 'library' | 'trash'
 
@@ -110,7 +111,7 @@ export function TopBar({
 
         {showNewButton && (
           <button
-            onClick={() => addSheet()}
+            onClick={() => { if (!addSheet()) notifyLimit('sheets') }}
             data-tour="new-sheet"
             style={{
               display: 'flex',

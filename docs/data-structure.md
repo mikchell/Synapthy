@@ -191,8 +191,8 @@ DBのテーブルとは別に、ガイドツアーの完了フラグを、ログ
 |---|---|---|
 | `id` | `uuid` | PK（`gen_random_uuid()`） |
 | `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | シート名 |
-| `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[], ... }`（サムネイル・線の色もここに入る）。5MBまで |
+| `name` | `text` | シート名。100文字まで |
+| `data` | `jsonb` | `{ mapType, nodes: Node[], edges: Edge[], ... }`（サムネイル・線の色もここに入る）。2MBまで |
 | `is_starred` | `boolean` | スター（お気に入り）フラグ |
 | `deleted_at` | `timestamptz` \| `null` | ゴミ箱に入れた日時。null なら未削除 |
 | `last_opened_at` | `timestamptz` | 最後に開いた日時 |
@@ -202,6 +202,8 @@ DBのテーブルとは別に、ガイドツアーの完了フラグを、ログ
 
 RLS により、ユーザーは自分の行のみ参照・作成・更新・削除できます（詳細は [SECURITY.md](./SECURITY.md)）。
 
+1人あたりのシート数（100枚。ごみ箱も数える）・フォルダ数（50個）にも上限があります。詳細は [DATABASE.md](./DATABASE.md#利用上限悪用対策) を参照してください。
+
 `nodes` / `edges` / `mapType` は `data` カラムに JSONB としてまとめて格納しています。シートを開く際は1行まるごと取得、保存時も1行まるごと上書き（upsert）するため、クエリがシンプルに保てます。
 
 ### `folders` テーブル
@@ -210,14 +212,14 @@ RLS により、ユーザーは自分の行のみ参照・作成・更新・削�
 |---|---|---|
 | `id` | `uuid` | PK |
 | `user_id` | `uuid` | `auth.users.id` の外部キー。INSERTトリガーで自動セット |
-| `name` | `text` | フォルダ名 |
+| `name` | `text` | フォルダ名。100文字まで |
 | `created_at` | `timestamptz` | 作成日時 |
 
 フラット構造（フォルダの中にフォルダは作れない）で、1シートは最大1フォルダに属します。
 
 ### Storage: `node-images` バケット
 
-ノードに貼り付けた画像の保存先（非公開バケット、署名付きURLで配信）。パスは `{auth.uid()}/{ファイル名}` 形式で、RLS相当のストレージポリシーにより自分のフォルダ配下のみ操作可能です。1ファイル5MBまで、形式は WebP / PNG / JPEG / GIF のみです。詳細は [DATABASE.md](./DATABASE.md) と [SECURITY.md](./SECURITY.md) を参照してください。
+ノードに貼り付けた画像の保存先（非公開バケット、署名付きURLで配信）。パスは `{auth.uid()}/{ファイル名}` 形式で、RLS相当のストレージポリシーにより自分のフォルダ配下のみ操作可能です。1ファイル2MB・1人200枚まで、形式は WebP / PNG / JPEG / GIF のみです。詳細は [DATABASE.md](./DATABASE.md) と [SECURITY.md](./SECURITY.md) を参照してください。
 
 ### インデックス
 

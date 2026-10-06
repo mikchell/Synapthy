@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { notifyLimit } from '../../lib/limits'
 import { useMindmapStore } from '../mindmap/store/mindmapStore'
 import { markTutorialCompleted, useTutorialStore } from './tutorialStore'
 import { TUTORIAL_STEPS, type TutorialStep } from './steps'
@@ -76,7 +77,7 @@ function ensureOpenableSheet() {
   if (current && !current.deletedAt) return
   const first = s.sheets.find((sh) => !sh.deletedAt)
   if (first) s.switchSheet(first.id)
-  else s.addSheet()
+  else if (!s.addSheet()) notifyLimit('sheets')
 }
 
 // 説明文を読みやすくする：文ごとに段落を分け、「ボタン名」などの「」の中は太字で目立たせる
