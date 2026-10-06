@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { JUNCTION_OFFSET, JUNCTION_RADIUS, LINE_WIDTH } from './logicTree'
 import { NodeImageView } from './NodeImageView'
+import { safeLineColor } from '../edgeColor'
 import { remapSpans, safeTextColor, setColor, TEXT_COLORS, toggleBold, toSegments, type LabelSpan } from '../labelStyle'
 import { attachImageToNode, removeImageFromNode } from '../nodeImage'
 import { useIsMobile } from '../../../hooks/useIsMobile'
@@ -108,6 +109,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
   const textOnly = !isFree && !data.isRoot
   // 子がいるノードの右には、線が枝分かれする「分岐点の丸」を出す
   const hasChildren = useMindmapStore((s) => !isFree && s.edges.some((e) => e.source === id))
+  // シートで設定した線の色。分岐点の丸と短い線にも同じ色を使う
+  const lineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor)) ?? 'var(--c-line)'
   const isMobile = useIsMobile()
   const updateNodeSize = useMindmapStore((s) => s.updateNodeSize)
   const setNodeImage = useMindmapStore((s) => s.setNodeImage)
@@ -420,8 +423,8 @@ function MindmapNodeComponent({ id, data, selected, width, height }: NodeProps<N
             overflow: 'visible', pointerEvents: 'none',
           }}
         >
-          <line x1={0} y1={JUNCTION_RADIUS + 2} x2={JUNCTION_OFFSET - JUNCTION_RADIUS} y2={JUNCTION_RADIUS + 2} stroke="var(--c-line)" strokeWidth={LINE_WIDTH} opacity={0.7} />
-          <circle cx={JUNCTION_OFFSET} cy={JUNCTION_RADIUS + 2} r={JUNCTION_RADIUS} fill="var(--c-bg)" stroke="var(--c-line)" strokeWidth={LINE_WIDTH} />
+          <line x1={0} y1={JUNCTION_RADIUS + 2} x2={JUNCTION_OFFSET - JUNCTION_RADIUS} y2={JUNCTION_RADIUS + 2} stroke={lineColor} strokeWidth={LINE_WIDTH} opacity={0.7} />
+          <circle cx={JUNCTION_OFFSET} cy={JUNCTION_RADIUS + 2} r={JUNCTION_RADIUS} fill="var(--c-bg)" stroke={lineColor} strokeWidth={LINE_WIDTH} />
         </svg>
       )}
       {/* 四隅の自由リサイズはフリー展開のみ */}

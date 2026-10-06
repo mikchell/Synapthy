@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { memo, useRef, useState } from 'react'
 import { useMindmapStore, type MindmapNodeData } from '../store/mindmapStore'
 import { JUNCTION_OFFSET, LINE_WIDTH } from './logicTree'
+import { safeLineColor } from '../edgeColor'
 
 function ellipseBorderPoint(
   cx: number, cy: number,
@@ -32,6 +33,8 @@ function InteractiveEdgeComponent({
   const [hovered, setHovered] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const insertNodeBetween = useMindmapStore((s) => s.insertNodeBetween)
+  // シートで設定した線の色（未設定ならテーマの色）
+  const lineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor))
   const isFree = useMindmapStore((s) =>
     s.sheets.find((sh) => sh.id === s.currentSheetId)?.mapType === 'free'
   )
@@ -117,10 +120,10 @@ function InteractiveEdgeComponent({
         className="react-flow__edge-path"
         d={edgePath}
         fill="none"
-        // 線の色はデータに保存された値ではなくテーマの色を使う（ダークモードで見やすい色に切り替わる）
-        style={{ ...restStyle, stroke: 'var(--c-line)', strokeWidth: LINE_WIDTH, pointerEvents: 'none' }}
+        // 色を設定していない線は、エッジに保存された値ではなくテーマの色を使う（ダークモードで見やすい色に切り替わる）
+        style={{ ...restStyle, stroke: lineColor ?? 'var(--c-line)', strokeWidth: LINE_WIDTH, pointerEvents: 'none' }}
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: Number(styleOpacity ?? 0.6) }}
+        animate={{ pathLength: 1, opacity: lineColor ? 0.9 : Number(styleOpacity ?? 0.6) }}
         transition={{
           pathLength: { duration: 0.4, delay: edgeDelay, ease: 'easeOut' },
           opacity: { duration: 0.05, delay: edgeDelay },

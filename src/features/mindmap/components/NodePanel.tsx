@@ -2,6 +2,7 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { AlignJustify, Bold, GripVertical } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useIsMobile } from '../../../hooks/useIsMobile'
+import { LINE_COLORS, safeLineColor } from '../edgeColor'
 import { TEXT_COLORS } from '../labelStyle'
 import { type MindmapNodeData, NODE_SIZE_STEPS, useMindmapStore } from '../store/mindmapStore'
 
@@ -18,6 +19,9 @@ export function NodePanel() {
   const selectedNodeShowBorder = selectedNode?.data.showBorder ?? false
   const updateNodeMemo = useMindmapStore((s) => s.updateNodeMemo)
   const updateNodeTextStyle = useMindmapStore((s) => s.updateNodeTextStyle)
+  const currentSheetId = useMindmapStore((s) => s.currentSheetId)
+  const setSheetLineColor = useMindmapStore((s) => s.setSheetLineColor)
+  const sheetLineColor = useMindmapStore((s) => safeLineColor(s.sheets.find((sh) => sh.id === s.currentSheetId)?.lineColor))
   const selectedNodeBold = selectedNode?.data.bold ?? false
   const selectedNodeTextColor = selectedNode?.data.textColor
   const updateNodeBorderWidth = useMindmapStore((s) => s.updateNodeBorderWidth)
@@ -243,6 +247,31 @@ export function NodePanel() {
                           key={c.label}
                           onClick={() => selectedNodeId && updateNodeTextStyle(selectedNodeId, { bold: selectedNodeBold, textColor: c.value })}
                           title={c.label}
+                          style={{
+                            width: 18, height: 18, borderRadius: '50%', padding: 0, cursor: 'pointer',
+                            background: c.value ?? 'transparent',
+                            border: c.value ? '2px solid var(--c-surface)' : '1.5px dashed var(--c-text-3)',
+                            boxShadow: active ? '0 0 0 2px var(--c-accent)' : c.value ? '0 0 0 1px var(--c-border)' : 'none',
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* 線の色（このシートの線すべてに適用） */}
+                <div style={{ marginTop: 16, borderTop: '1px solid var(--c-border)', paddingTop: 14 }}>
+                  <p style={{ color: 'var(--c-text-3)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0' }}>
+                    線の色
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {[{ label: '標準', value: undefined }, ...LINE_COLORS].map((c) => {
+                      const active = sheetLineColor === c.value
+                      return (
+                        <button
+                          key={c.label}
+                          onClick={() => setSheetLineColor(currentSheetId, c.value ?? null)}
+                          title={`${c.label}（このシートの線すべて）`}
                           style={{
                             width: 18, height: 18, borderRadius: '50%', padding: 0, cursor: 'pointer',
                             background: c.value ?? 'transparent',
