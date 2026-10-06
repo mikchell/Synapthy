@@ -65,6 +65,16 @@
 - `npm run check:csp`（`scripts/check-csp.mjs`）で、CSP を検査できる。ワイルドカードが無いこと、Supabase の許可先がプロジェクトの URL だけであること、supabase-js が実際に通信する宛先（認証・REST・ストレージ）がすべて許可されていることを確かめる。supabase-js の更新で宛先のホストが変わったときに、気づくためのもの。`node --env-file=.env.local scripts/check-csp.mjs` で、環境変数の URL とも突き合わせられる
 - `style-src` は `'unsafe-inline'` を許可している。トースト（sonner）が実行時に `<style>` を差し込むため
 
+## 依存パッケージと CI
+
+- **CI**（`.github/workflows/ci.yml`）: PR と `main` への push で、`npm run lint`・`npm run check:csp`（CSP の検査）・`npm run build`（型チェックを含む）を実行する。あわせて `npm audit --omit=dev --audit-level=high` で、**本番の依存関係**の、重大（high 以上）な既知の脆弱性を検査する。週 1 回（月曜 9:00 JST）の定期実行でも audit を行い、コードが変わらなくても、新しく見つかった脆弱性に気づける
+- ワークフローに渡す権限は、リポジトリの読み取り（`contents: read`）だけ。`actions/checkout` の認証情報も残さない（`persist-credentials: false`）
+- Action は、タグではなく**コミットの SHA で固定**している（タグはあとから付け替えられるため）。コメントのバージョンと一緒に、Dependabot が更新する
+- **Dependabot**（`.github/dependabot.yml`）: `npm` と `github-actions` を、毎週月曜 9:00（JST）に確認する。npm の minor / patch は 1 つの PR にまとめ、major は個別の PR にする。PR にも CI が走る
+- リポジトリの設定で、**Dependabot アラート**（既知の脆弱性の通知）と**自動のセキュリティ更新**（脆弱性を直す PR の自動作成）を有効にしている
+- ブランチ保護（CI の成功を、マージの条件にする）は設定していない。CI の結果は、PR の画面で確認する
+- 開発用の依存関係（`devDependencies`）の脆弱性は、CI の audit では対象にしていない（本番に出ないため）。Dependabot アラートでは通知される
+
 ## 環境変数
 
 - Supabase の接続情報（`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`）は `.env.local` などの `.env*` ファイルに保持し、リポジトリにコミットしない（`.gitignore` 対象）
@@ -83,4 +93,4 @@
 - 単位時間あたりの書き込み回数に対する、サーバー側のレート制限は未導入。数とサイズの上限で、1アカウントが使える容量の最大値は抑えている（DB は最大およそ 100枚 × 2MB、Storage は 200枚 × 2MB）が、アカウントを複数作られると、その分だけ増える。Supabase の無料プランの容量（DB 500MB・Storage 1GB）を埋められる可能性は残るため、ダッシュボードで使用量を定期的に確認する
 - 初回ロードは、シートの軽い項目だけを取得し、ノードの中身は、シートを開くときに1枚分だけ取得する（`fetchSheetsMeta` / `fetchSheetData`）。転送量（帯域）は大きく減ったが、DB が `data`（JSONB）から軽い項目を取り出すときの読み取りは残る。さらに軽くするなら、`mapType` / `thumbnailPath` / `lineColor` を専用の列に出す
 - Supabase ダッシュボード側の設定（Authentication の Redirect URLs の許可リスト、Google OAuth クライアントの設定、バケットの実際の設定）は、リポジトリからは確認できない。マイグレーションを本番へ適用したあとで、ダッシュボードでも確認する
-- CI がなく、依存パッケージの脆弱性チェック（`npm audit`）や更新（Dependabot など）は自動化していない
+- CI の成功を、マージの条件にはしていない（ブランチ保護なし）。失敗した状態でも、マージはできる
