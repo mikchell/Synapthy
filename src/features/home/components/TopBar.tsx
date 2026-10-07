@@ -5,7 +5,6 @@ import { useMindmapStore } from '../../mindmap/store/mindmapStore'
 import { ImportError } from '../../mindmap/import/markdown'
 import { readMarkdownFile } from '../../mindmap/import/readFile'
 import { useIsMobile } from '../../../hooks/useIsMobile'
-import { ThemeToggle } from '../../../components/ThemeToggle'
 import { notifyLimit } from '../../../lib/limits'
 
 export type TopBarVariant = 'recent' | 'library' | 'trash'
@@ -63,7 +62,6 @@ export function TopBar({
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--c-text)' }}>{title}</h1>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <ThemeToggle />
         <div style={{ position: 'relative' }}>
           <Search
             size={14}

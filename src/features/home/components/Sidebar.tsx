@@ -1,9 +1,10 @@
-import { Clock, Folder as FolderIcon, HelpCircle, LayoutGrid, LogOut, Pencil, Plus, RotateCcw, Star, Trash2, X, type LucideIcon } from 'lucide-react'
+import { Clock, Folder as FolderIcon, HelpCircle, LayoutGrid, LogOut, Moon, Pencil, Plus, RotateCcw, Star, Sun, Trash2, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useMindmapStore } from '../../mindmap/store/mindmapStore'
 import type { Folder } from '../../../types/sheet'
 import { LIMITS, notifyLimit } from '../../../lib/limits'
+import { useTheme } from '../../../lib/theme'
 import { NameInput } from '../../../components/NameInput'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ConfirmDialog } from '../../mindmap/components/ConfirmDialog'
@@ -180,6 +181,8 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
   const folders = useMindmapStore((s) => s.folders)
   const createFolder = useMindmapStore((s) => s.createFolder)
   const startTutorial = useTutorialStore((s) => s.start)
+  const theme = useTheme((s) => s.theme)
+  const toggleTheme = useTheme((s) => s.toggleTheme)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const [addingFolder, setAddingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -195,6 +198,10 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
     setNewFolderName('')
     setAddingFolder(false)
   }
+
+  // 押すと切り替わる先の名前だけを出す（編集画面のサイドバーと同じ。読み上げには、操作の内容も伝える）
+  const themeLabel = theme === 'dark' ? 'ライトモード' : 'ダークモード'
+  const ThemeIcon = theme === 'dark' ? Sun : Moon
 
   return (
     <div
@@ -296,6 +303,16 @@ export function Sidebar({ section, onSectionChange, selectedFolderId, onSelectFo
       <button onClick={startTutorial} data-tour="tutorial-help" style={{ ...NAV_BTN(false), marginBottom: 8 }}>
         <HelpCircle size={16} />
         使い方
+      </button>
+
+      <button
+        onClick={toggleTheme}
+        data-tour="theme-toggle"
+        aria-label={`${themeLabel}にする`}
+        style={{ ...NAV_BTN(false), marginBottom: 8 }}
+      >
+        <ThemeIcon size={16} />
+        {themeLabel}
       </button>
 
       {/* 開発環境だけ：チュートリアルの完了状態をリセットして、最初から表示し直す */}

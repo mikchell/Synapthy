@@ -140,6 +140,7 @@ export function HomeScreen() {
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(true)}
+            data-tour="home-menu"
             style={{
               display: 'flex',
               alignItems: 'center',
