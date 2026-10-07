@@ -7,7 +7,7 @@
 - `<html data-theme="light">` / `<html data-theme="dark">` で切替。制御は `src/lib/theme.ts`（Zustand）
 - 未選択時はOSの `prefers-color-scheme` に自動追従し、OS側の変更にもリアルタイムで追従する
 - 一度手動で切り替えると、その選択を `localStorage`（キー: `synaptique-theme`）に保存して以後優先する
-- 切替ボタンは `src/components/ThemeToggle.tsx`
+- 切替ボタンは、ホーム画面と編集画面のサイドバーの下部にある（`src/features/home/components/Sidebar.tsx`、`src/features/mindmap/components/EditorSidebar.tsx`）。どちらも「使い方」の下に、同じ並びで置く
 - 画面の描画前に `<html data-theme>` を決めるための初期化は、`public/theme-init.js`（CSP の `script-src 'self'` に合わせて、`index.html` から外に出してある）
 
 ## カラートークン
